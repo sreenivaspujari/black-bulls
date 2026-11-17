@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MEDI-VISION AI — See Beyond the Image</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f4f7fb; --panel:#ffffff; --panel2:#f1f5f9; --line:#e2e8f0; --line2:#cbd5e1;
+  --text:#0f172a; --muted:#5b6b85; --dim:#8a97ad;
+  --accent:#0d9488; --accent-l:#ccfbf1; --blue:#2563eb;
+  --p1:#dc2626; --p2:#d97706; --p3:#16a34a;
+  --r:14px; --mono:'IBM Plex Mono',ui-monospace,monospace; --head:'Space Grotesk',system-ui,sans-serif;
+  --shadow:0 1px 2px rgba(15,23,42,.04),0 4px 16px rgba(15,23,42,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{font-family:'IBM Plex Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14.5px;line-height:1.5;
+  background-image:radial-gradient(1000px 500px at 100% -10%,rgba(13,148,136,.07),transparent 60%),radial-gradient(800px 400px at -10% 110%,rgba(37,99,235,.05),transparent 60%);background-attachment:fixed}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+.app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+/* nav */
+.nav{position:sticky;top:0;height:100vh;border-right:1px solid var(--line);background:#fff;padding:22px 14px;display:flex;flex-direction:column;gap:3px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 8px 18px}
+.logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#14b8a6,#2563eb);display:grid;place-items:center;box-shadow:0 6px 18px rgba(13,148,136,.3)}
+.logo svg{width:22px;height:22px}
+.brand b{font-family:var(--head);font-size:17px;letter-spacing:.4px;display:block;line-height:1.1}
+.brand small{color:var(--muted);font-size:11px}
+.nav a.item,[data-go]{cursor:pointer}
+.nav a.item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;color:var(--muted);text-decoration:none;font-weight:500;transition:.15s}
+.nav a.item svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8}
+.nav a.item:hover{background:var(--panel2);color:var(--text)}
+.nav a.item.active{background:var(--accent-l);color:#115e59}
+.nav .sep{font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dim);padding:14px 12px 4px}
+.nav .foot{margin-top:auto;font-size:11.5px;color:var(--muted);padding:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;line-height:1.45}
+.badge-x{display:inline-block;font-size:10px;padding:1px 6px;border-radius:5px;background:#fef3c7;color:#92400e;margin-left:auto;font-weight:600}
+/* top */
+.main{min-width:0}
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;padding:14px 28px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.88);backdrop-filter:blur(10px)}
+.top h1{font-family:var(--head);font-size:19px;font-weight:600}
+.top .tag{color:var(--muted);font-size:12.5px}
+.demo-pill{font-size:11px;font-weight:600;color:#92400e;border:1px solid #fcd34d;background:#fffbeb;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.cmd{margin-left:auto;display:flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:4px 4px 4px 12px;width:360px;max-width:100%}
+.cmd input{background:none;border:0;outline:0;flex:1;font-size:13px;min-width:0}
+.cmd input::placeholder{color:var(--dim)}
+.mic{width:34px;height:34px;border-radius:9px;border:0;background:var(--accent);cursor:pointer;display:grid;place-items:center;flex:none}
+.mic svg{width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2}
+.mic.on{background:var(--p1);animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.5)}70%{box-shadow:0 0 0 10px rgba(220,38,38,0)}100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}}
+.wrap{padding:26px 28px 60px;max-width:1440px}
+section.view{display:none;animation:fade .25s ease}
+section.view.show{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.h2{font-family:var(--head);font-size:24px;font-weight:600;margin-bottom:4px}
+.sub{color:var(--muted);margin-bottom:20px;max-width:820px}
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);min-width:0}
+.card h3{font-family:var(--head);font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h3 .mut{margin-left:auto;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:12px;color:var(--muted);font-weight:400}
+.kpi{border-top:3px solid var(--k,var(--accent))}
+.kpi .lbl{color:var(--muted);font-size:12.5px}
+.kpi .num{font-family:var(--head);font-size:32px;font-weight:600;margin-top:2px;color:var(--text)}
+.kpi .hint{font-size:12px;color:var(--dim)}
+.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 14px;border-radius:10px;border:1px solid var(--line2);background:#fff;cursor:pointer;font-weight:500;font-size:13.5px;transition:.15s;white-space:nowrap;color:var(--text)}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.pri{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.btn.pri:hover{background:#0f766e;color:#fff}
+.btn.sm{padding:6px 10px;font-size:12.5px;border-radius:8px}
+.btn.on{border-color:var(--accent);background:var(--accent-l);color:#115e59}
+.btn.red{border-color:#fca5a5;color:#b91c1c}.btn.red.on{background:#fee2e2}
+.btn.amber{border-color:#fcd34d;color:#92400e}.btn.amber.on{background:#fef3c7}
+.btn.green{border-color:#86efac;color:#15803d}.btn.green.on{background:#dcfce7}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.chip{padding:6px 12px;border-radius:99px;border:1px solid var(--line2);background:#fff;cursor:pointer;font-size:12.5px;color:var(--muted)}
+.chip:hover{border-color:var(--accent)}
+.chip.on{background:var(--text);color:#fff;border-color:var(--text);font-weight:600}
+.pr{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:12px;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.pr::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.pr.p1{color:#b91c1c;background:#fee2e2}.pr.p2{color:#92400e;background:#fef3c7}.pr.p3{color:#15803d;background:#dcfce7}
+.st{font-size:12px;padding:3px 8px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);white-space:nowrap;color:var(--muted)}
+.st.done{color:#15803d;border-color:#bbf7d0;background:#f0fdf4}
+.st.rev{color:#1d4ed8;border-color:#bfdbfe;background:#eff6ff}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px 10px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle}
+th{color:var(--muted);font-weight:500;font-size:12px;white-space:nowrap;background:var(--panel2)}
+th[data-s]{cursor:pointer;user-select:none}
+th[data-s]:hover{color:var(--text)}
+th.sorted{color:var(--accent)}
+tbody tr:hover{background:#f8fafc}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}.dim{color:var(--dim)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+.tbl-wrap table{min-width:1120px}
+#qTable td:nth-child(7){min-width:220px}
+.nw{white-space:nowrap}
+.tbl-wrap tr:last-child td{border-bottom:0}
+.search,select,input.inp,textarea{background:#fff;border:1px solid var(--line2);border-radius:10px;padding:8px 10px;outline:0}
+.search{min-width:220px}
+.search:focus,textarea:focus,select:focus,input.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,148,136,.12)}
+textarea{width:100%;resize:vertical;min-height:70px}
+.thumbc{width:44px;height:44px;border-radius:8px;background:#000;display:block;object-fit:cover;border:1px solid var(--line)}
+/* bars */
+.bars{display:flex;flex-direction:column;gap:12px}
+.bar{display:grid;grid-template-columns:110px 1fr 34px;gap:10px;align-items:center;font-size:13px}
+.bar .track{height:10px;background:var(--panel2);border-radius:99px;overflow:hidden}
+.bar .fill{height:100%;border-radius:99px;transition:width .6s}
+/* analyze */
+.ana{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px}
+.viewer{position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:1/1;cursor:grab;touch-action:none}
+.viewer.drag{cursor:grabbing}
+.viewer .stage{position:absolute;inset:0;transform-origin:center;transition:transform .15s}
+.viewer canvas{position:absolute;inset:0;width:100%;height:100%}
+.viewer .hud{position:absolute;left:10px;top:10px;font-family:var(--mono);font-size:11px;color:#9fe;opacity:.85;pointer-events:none;text-shadow:0 1px 2px #000;line-height:1.5}
+.viewer .hud.r{left:auto;right:10px;text-align:right}
+.viewer .scan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#2dd4bf,transparent);box-shadow:0 0 18px #2dd4bf;top:0;display:none}
+.viewer.scanning .scan{display:block;animation:scan 1.1s linear infinite}
+@keyframes scan{from{top:0}to{top:100%}}
+.empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#94a3b8;padding:30px}
+.drop{border:1.5px dashed var(--line2);border-radius:12px;padding:16px;text-align:center;color:var(--muted);cursor:pointer;transition:.15s;background:var(--panel2)}
+.drop:hover,.drop.over{border-color:var(--accent);color:var(--text);background:#f0fdfa}
+.uprow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.uprow label,.fgrid label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.uprow select,.fgrid select,.fgrid input{width:100%}
+.tools{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 16px;margin-top:12px}
+.tools label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+input[type=range]{accent-color:var(--accent);width:100%}
+.ptable td{padding:8px 4px;font-size:13px}
+.ptable td:first-child{color:var(--muted);width:46%}
+.gauge{display:flex;align-items:center;gap:16px}
+.gauge svg{width:150px;height:92px;flex:none}
+.warn{display:flex;gap:10px;padding:12px 14px;border-radius:10px;background:#fffbeb;border:1px solid #fcd34d;color:#78350f;font-size:13px;margin-top:12px}
+.info{display:flex;gap:10px;padding:12px 14px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-size:13px}
+.why li{list-style:none;padding:9px 0 9px 26px;border-bottom:1px solid var(--line);position:relative;font-size:13.5px}
+.why li::before{content:"";position:absolute;left:4px;top:15px;width:10px;height:10px;border-radius:3px;background:var(--accent)}
+.why li:last-child{border:0}
+.lab{display:inline-block;font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;font-weight:600;color:#92400e;background:#fffbeb;border:1px solid #fcd34d;padding:1px 7px;border-radius:5px}
+.steps{display:flex;flex-direction:column;gap:6px;margin-top:4px;font-size:13px}
+.steps div{color:var(--dim)} .steps div.ok{color:var(--accent)} .steps div.run{color:var(--text);font-weight:500}
+/* compare */
+.cmp{position:relative;aspect-ratio:1/1;max-width:620px;background:#000;border-radius:12px;overflow:hidden;user-select:none;touch-action:none}
+.cmp canvas{position:absolute;inset:0;width:100%;height:100%}
+.cmp .clip{position:absolute;inset:0;overflow:hidden}
+.cmp .handle{position:absolute;top:0;bottom:0;width:2px;background:#2dd4bf;box-shadow:0 0 12px #2dd4bf;cursor:ew-resize}
+.cmp .handle::after{content:"⟷";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;background:#2dd4bf;color:#042f2e;display:grid;place-items:center;font-weight:700}
+.cmp .tagl,.cmp .tagr{position:absolute;top:10px;font-size:11px;font-family:var(--mono);background:rgba(0,0,0,.6);color:#fff;padding:3px 8px;border-radius:6px}
+.cmp .tagl{left:10px} .cmp .tagr{right:10px}
+.sbs{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:620px}
+.sbs canvas{width:100%;border-radius:10px;background:#000}
+.tl{position:relative;padding-left:22px}
+.tl::before{content:"";position:absolute;left:6px;top:4px;bottom:4px;width:2px;background:var(--line2)}
+.tl .ev{position:relative;padding:4px 0 16px}
+.tl .ev::before{content:"";position:absolute;left:-21px;top:9px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--accent)}
+.tl .ev.cur::before{background:var(--accent)}
+.tl .ev b{font-size:13.5px}
+/* twin */
+.twin{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
+.three{position:relative;height:620px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:radial-gradient(ellipse at 50% 35%,#ffffff,#e6eef7 75%);touch-action:none;box-shadow:var(--shadow)}
+.three canvas{display:block;cursor:grab}
+.three .ctrl{position:absolute;left:12px;top:12px;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100% - 24px)}
+.three .ctrl2{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px}
+.three .lbl3{position:absolute;top:56px;font-family:var(--mono);font-size:11px;color:var(--muted);background:#fff;border:1px solid var(--line);padding:3px 8px;border-radius:6px;pointer-events:none}
+.three .hint3{position:absolute;left:12px;bottom:12px;font-size:11.5px;color:var(--muted)}
+.three .nogl{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:30px;color:var(--muted)}
+/* billing */
+.bill-items td:last-child,.bill-items th:last-child{text-align:right}
+.sum{display:grid;grid-template-columns:1fr auto;gap:6px 20px;font-size:13.5px;margin-top:10px}
+.sum .tot{font-family:var(--head);font-size:20px;font-weight:600;color:var(--accent)}
+.alert{display:flex;gap:10px;align-items:center;padding:10px 14px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:#7f1d1d;font-size:13px;margin-bottom:8px}
+.pay-st{font-weight:600;font-size:12px;padding:3px 9px;border-radius:99px}
+.pay-st.paid{background:#dcfce7;color:#15803d}.pay-st.part{background:#dbeafe;color:#1d4ed8}.pay-st.unpaid{background:#fef3c7;color:#92400e}.pay-st.over{background:#fee2e2;color:#b91c1c}
+.form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;gap:8px;align-items:end}
+.form label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.form input,.form select{width:100%}
+/* report */
+.report{background:#fff;color:#0f172a;border-radius:12px;padding:28px 30px;font-size:13.5px;border:1px solid var(--line);box-shadow:var(--shadow)}
+.report h4{font-family:var(--head);font-size:20px;color:#0f172a}
+.report .rh{display:flex;justify-content:space-between;border-bottom:2px solid var(--accent);padding-bottom:12px;margin-bottom:14px;gap:10px}
+.report table td{border-color:#e2e8f0;padding:7px 4px}
+.report table td:first-child{color:#475569;width:38%}
+.report ul{padding-left:18px;margin:6px 0 12px}
+.report .disc{font-size:11.5px;color:#64748b;border-top:1px solid #e2e8f0;padding-top:10px;margin-top:14px}
+.report .imgs{display:flex;gap:10px;margin:10px 0;flex-wrap:wrap}
+.report .imgs img{width:170px;border-radius:8px;background:#000}
+/* help */
+.vid{display:flex;flex-direction:column;gap:10px}
+.thumb{aspect-ratio:16/9;border-radius:10px;background:linear-gradient(135deg,#ccfbf1,#dbeafe);display:grid;place-items:center;position:relative;overflow:hidden}
+.thumb .play{width:54px;height:54px;border-radius:50%;background:#dc2626;display:grid;place-items:center;box-shadow:0 6px 16px rgba(220,38,38,.35)}
+.thumb .play::after{content:"";border-left:16px solid #fff;border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:4px}
+.thumb .dur{position:absolute;right:8px;bottom:8px;font-size:11px;background:rgba(15,23,42,.75);color:#fff;padding:2px 6px;border-radius:4px}
+.faq details{border-bottom:1px solid var(--line);padding:12px 0}
+.faq summary{cursor:pointer;font-weight:500}
+.faq p{color:var(--muted);margin-top:8px;font-size:13.5px}
+.vcmd{font-family:var(--mono);font-size:12.5px;background:var(--panel2);border:1px solid var(--line);padding:6px 10px;border-radius:8px;display:inline-block;margin:3px 4px 3px 0}
+/* modal/toast */
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);display:none;place-items:center;z-index:100;padding:20px}
+.modal.show{display:grid}
+.modal .box{background:#fff;border:1px solid var(--line);border-radius:16px;max-width:640px;width:100%;max-height:92vh;overflow:auto;padding:22px;box-shadow:0 20px 60px rgba(15,23,42,.25)}
+.modal h3{font-family:var(--head);font-size:18px;margin-bottom:4px}
+.fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
+.fgrid .full{grid-column:1/-1}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:11px 18px;border-radius:12px;opacity:0;transition:.25s;z-index:200;pointer-events:none;font-size:13.5px;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.hero{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;margin-bottom:16px}
+.hero .big{background:linear-gradient(135deg,#f0fdfa,#ffffff 55%,#eff6ff)}
+.hero h2{font-family:var(--head);font-size:28px;line-height:1.15;font-weight:600}
+.hero h2 span{background:linear-gradient(90deg,#0d9488,#2563eb);-webkit-background-clip:text;background-clip:text;color:transparent}
+.flow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.flow span{font-size:12px;padding:5px 10px;border-radius:8px;background:#fff;border:1px solid var(--line);color:var(--muted)}
+.flow span b{color:var(--accent);margin-right:4px}
+.log{max-height:230px;overflow:auto;font-size:12.5px}
+.log div{padding:7px 0;border-bottom:1px solid var(--line);display:flex;gap:10px}
+.log div .t{color:var(--dim);font-family:var(--mono);font-size:11.5px;white-space:nowrap}
+@media (max-width:1180px){.ana,.twin,.hero{grid-template-columns:minmax(0,1fr)}.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}.form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:860px){.app{grid-template-columns:minmax(0,1fr)}.nav{position:sticky;top:0;height:auto;flex-direction:row;overflow-x:auto;padding:8px;z-index:30;border-right:0;border-bottom:1px solid var(--line)}.nav .brand,.nav .sep,.nav .foot{display:none}.nav a.item,[data-go]{cursor:pointer}
+.nav a.item{white-space:nowrap;padding:8px 10px}.top{position:static;flex-wrap:wrap;padding:12px 16px}.cmd{width:100%}.wrap{padding:18px 14px}.g2,.g3{grid-template-columns:minmax(0,1fr)}.three{height:480px}.search{min-width:0;width:100%}}
+@media (max-width:520px){.g4{grid-template-columns:minmax(0,1fr)}.fgrid,.uprow{grid-template-columns:minmax(0,1fr)}.hero h2{font-size:23px}}
+</style>
+</head>
+<body>
+<div class="app">
+<nav class="nav" id="nav">
+  <div class="brand">
+    <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
+    <div><b>MEDI-VISION</b><small>AI decision support</small></div>
+  </div>
+  <a class="item" data-go="dashboard" role="button" tabindex="0" data-v="dashboard"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
+  <a class="item" data-go="analyze" role="button" tabindex="0" data-v="analyze"><svg viewBox="0 0 24 24"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3"/><circle cx="12" cy="12" r="4"/></svg>Analyze scan</a>
+  <a class="item" data-go="compare" role="button" tabindex="0" data-v="compare"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></svg>Compare scans</a>
+  <a class="item" data-go="twin" role="button" tabindex="0" data-v="twin"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><path d="M12 8v7M8 11h8M10 21l2-6 2 6"/></svg>3D Medi-Twin</a>
+  <a class="item" data-go="reports" role="button" tabindex="0" data-v="reports"><svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>Reports</a>
+  <div class="sep">Extra</div>
+  <a class="item" data-go="billing" role="button" tabindex="0" data-v="billing"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>Billing<span class="badge-x">EXTRA</span></a>
+  <a class="item" data-go="help" role="button" tabindex="0" data-v="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 9l5 3-5 3z"/></svg>Tutorials &amp; help</a>
+  <div class="foot"><b style="color:#92400e">Prototype.</b> Demo patients are fictional. AI outputs are illustrative and not a diagnosis. Every flagged case needs review by a qualified clinician.</div>
+</nav>
+
+<div class="main">
+<header class="top">
+  <div>
+    <h1>MEDI-VISION AI</h1>
+    <div class="tag">See Beyond the Image. Understand the Risk.</div>
+  </div>
+  <span class="demo-pill">PROTOTYPE</span>
+  <div class="cmd">
+    <input id="cmdIn" placeholder='Say or type a command, e.g. "show high-priority patients"'>
+    <button class="mic" id="micBtn" title="Voice command"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- DASHBOARD -->
+<section class="view" id="v-dashboard">
+  <div class="hero">
+    <div class="card big">
+      <h2>Prioritise the scans that<br><span>need a doctor first.</span></h2>
+      <p class="muted" style="margin-top:10px;max-width:560px">Upload a scan of any body part for a patient. MEDI-VISION checks image quality, highlights regions that may need attention, explains why, and sorts every case into a review queue. The doctor always makes the final decision.</p>
+      <div class="flow"><span><b>1</b>Upload</span><span><b>2</b>Quality &amp; blur check</span><span><b>3</b>Heatmap</span><span><b>4</b>Priority</span><span><b>5</b>Doctor decision</span><span><b>6</b>Report</span></div>
+      <div class="row" style="margin-top:16px"><button class="btn pri" data-act="newpat">＋ New patient &amp; upload scan</button><a class="btn" data-go="twin" role="button" tabindex="0">Open 3D Medi-Twin</a></div>
+    </div>
+    <div class="card">
+      <h3>Queue by priority</h3>
+      <div class="bars" id="prBars"></div>
+      <h3 style="margin-top:18px">Scans by body part</h3>
+      <div class="bars" id="partBars"></div>
+    </div>
+  </div>
+  <div class="grid g4" id="kpis" style="margin-bottom:16px"></div>
+  <div class="card">
+    <h3>Patient review queue <span class="mut" id="qCount"></span></h3>
+    <div class="row" style="margin-bottom:12px;justify-content:space-between">
+      <div class="row" id="filters">
+        <button class="chip on" data-f="all">All</button>
+        <button class="chip" data-f="P1">🔴 Priority 1</button>
+        <button class="chip" data-f="P2">🟠 Priority 2</button>
+        <button class="chip" data-f="P3">🟢 Priority 3</button>
+        <button class="chip" data-f="await">Awaiting review</button>
+        <button class="chip" data-f="done">Completed</button>
+      </div>
+      <div class="row"><input class="search" id="qSearch" placeholder="Search ID, name, body part, finding…"><button class="btn pri sm" data-act="newpat">＋ New patient</button></div>
+    </div>
+    <div class="tbl-wrap"><table id="qTable"><thead><tr>
+      <th data-s="priority">Priority</th><th>Scan</th><th data-s="id">Patient ID</th><th data-s="name">Name</th><th>Age/Sex</th><th data-s="part">Body part</th><th>Potential finding</th><th data-s="confidence">Model conf.</th><th data-s="quality">Quality</th><th data-s="status">Status</th><th>Actions</th>
+    </tr></thead><tbody></tbody></table></div>
+    <div class="dim" style="font-size:12px;margin-top:8px">Click a column header to sort. Click a row to open the patient.</div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>Activity log <span class="mut">uploads, doctor decisions, payments</span></h3>
+    <div class="log" id="logDash"></div>
+  </div>
+</section>
+
+<!-- ANALYZE -->
+<section class="view" id="v-analyze">
+  <div class="h2">Analyze scan</div>
+  <p class="sub">Pick a patient and upload a scan of any body part. MEDI-VISION checks image quality and sharpness first, then shows an illustrative heatmap, confidence, reasoning and a suggested review priority.</p>
+  <div class="ana">
+    <div>
+      <div class="card" style="padding:14px">
+        <div class="row" style="margin-bottom:12px;justify-content:space-between">
+          <div class="row"><select id="patSel" title="Patient"></select><select id="scanSel" title="Scan"></select></div>
+          <div class="row">
+            <button class="btn sm" id="vOrig">Original</button>
+            <button class="btn sm on" id="vHeat">AI heatmap</button>
+          </div>
+        </div>
+        <div class="viewer" id="viewer">
+          <div class="stage" id="stage">
+            <canvas id="cvImg" width="512" height="512"></canvas>
+            <canvas id="cvHeat" width="512" height="512"></canvas>
+          </div>
+          <div class="scan"></div>
+          <div class="hud" id="hudL"></div>
+          <div class="hud r" id="hudR"></div>
+          <div class="empty" id="vEmpty" style="display:none">No scan yet for this patient.<br>Upload one below.</div>
+        </div>
+        <div class="tools">
+          <label>Zoom <input type="range" id="tZoom" min="1" max="4" step="0.1" value="1"></label>
+          <label>Brightness <input type="range" id="tBri" min="40" max="180" value="100"></label>
+          <label>Contrast <input type="range" id="tCon" min="40" max="220" value="100"></label>
+          <label>Heatmap opacity <input type="range" id="tHeat" min="0" max="100" value="75"></label>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn sm" id="tRotL">⟲ Rotate</button>
+          <button class="btn sm" id="tRotR">⟳ Rotate</button>
+          <button class="btn sm" id="tInv">Invert</button>
+          <button class="btn sm" id="tReset">Reset view</button>
+          <span class="dim" style="font-size:12px;margin-left:auto">Scroll to zoom · drag to pan</span>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h3>Upload a new scan for <span id="upFor" style="color:var(--accent)"></span></h3>
+        <div class="uprow">
+          <label>Body part<select id="upPart"></select></label>
+          <label>Image type<select id="upMod"></select></label>
+        </div>
+        <div class="drop" id="drop">
+          <b>Drag &amp; drop or click to upload</b> (PNG/JPG)<br><span style="font-size:12px">X-ray, CT, MRI or ultrasound of any body part. The image stays in your browser. Use anonymised or approved images only.</span>
+          <input type="file" id="file" accept="image/*" hidden>
+        </div>
+      </div>
+    </div>
+    <div class="grid" style="align-content:start">
+      <div class="card"><h3>Image quality &amp; blur check <span class="mut">measured on the image</span></h3><div id="qualBody"></div></div>
+      <div class="card"><h3>AI confidence &amp; reliability <span class="lab">illustrative</span></h3><div id="confBody"></div></div>
+      <div class="card"><h3>Why was it flagged?</h3><ul class="why" id="whyList"></ul></div>
+      <div class="card"><h3>Doctor vs AI decision</h3><div id="decBody"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section class="view" id="v-compare">
+  <div class="h2">Before vs after</div>
+  <p class="sub">Compare a patient's previous and current scans of the same body part. Drag the slider, or switch on change highlighting to mark the pixels that differ noticeably between the two images.</p>
+  <div class="twin">
+    <div class="card">
+      <div class="row" style="margin-bottom:12px;justify-content:space-between">
+        <div class="row"><select id="cmpSel"></select><select id="cmpA" title="Previous scan"></select><span class="dim">→</span><select id="cmpB" title="Current scan"></select></div>
+        <div class="row">
+          <button class="btn sm on" id="cmSlider">Slider</button>
+          <button class="btn sm" id="cmSide">Side by side</button>
+          <button class="btn sm" id="cmDiff">Highlight changes</button>
+        </div>
+      </div>
+      <div id="cmpEmpty" class="info" style="display:none">This patient has only one scan. Upload a second scan (Analyze → Upload) to compare.</div>
+      <div class="cmp" id="cmpBox">
+        <canvas id="cmpCur" width="512" height="512"></canvas>
+        <div class="clip" id="cmpClip"><canvas id="cmpPrev" width="512" height="512"></canvas></div>
+        <canvas id="cmpDiffCv" width="512" height="512" style="display:none"></canvas>
+        <div class="handle" id="cmpHandle"></div>
+        <span class="tagl" id="tagPrev">PREVIOUS</span><span class="tagr" id="tagCur">CURRENT</span>
+      </div>
+      <div class="sbs" id="sbs" style="display:none">
+        <div><div class="dim mono" style="font-size:11px;margin-bottom:4px" id="sbsL">PREVIOUS</div><canvas id="sbsPrev" width="512" height="512"></canvas></div>
+        <div><div class="dim mono" style="font-size:11px;margin-bottom:4px" id="sbsR">CURRENT</div><canvas id="sbsCur" width="512" height="512"></canvas></div>
+      </div>
+    </div>
+    <div class="grid" style="align-content:start">
+      <div class="card"><h3>Change summary</h3><div id="cmpSummary"></div></div>
+      <div class="card"><h3>Examination timeline</h3><div class="tl" id="cmpTl"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- TWIN -->
+<section class="view" id="v-twin">
+  <div class="h2">3D Medi-Twin</div>
+  <p class="sub">Each patient's visual health profile. The body part of the flagged scan is highlighted on a 3D body. Drag to rotate, scroll to zoom, and click an organ or bone for details. The body is a simplified illustration, not the patient's real anatomy.</p>
+  <div class="twin">
+    <div class="three" id="threeBox">
+      <div class="ctrl">
+        <button class="btn sm" data-m="normal">Normal view</button>
+        <button class="btn sm on" data-m="ai">AI view</button>
+        <button class="btn sm" data-m="compare">Comparison view</button>
+        <button class="btn sm" id="fbBtn">Show back</button>
+      </div>
+      <div class="ctrl2">
+        <button class="btn sm" id="zIn">＋</button>
+        <button class="btn sm" id="zOut">－</button>
+        <button class="btn sm" id="zRst">⟳</button>
+      </div>
+      <span class="lbl3" id="lblA" style="display:none;left:22%">REFERENCE (normal)</span>
+      <span class="lbl3" id="lblB" style="display:none;right:22%">PATIENT (AI flagged)</span>
+      <span class="hint3">Drag to rotate · scroll to zoom · click a body part</span>
+      <div class="nogl" id="noGl">3D needs WebGL and the three.js library. Check your internet connection or try Chrome/Edge.</div>
+    </div>
+    <div class="grid" style="align-content:start">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;margin-bottom:10px"><h3 style="margin:0">Patient twin</h3><select id="twinSel"></select></div>
+        <div id="twinHead"></div>
+      </div>
+      <div class="card"><h3>Body-part insight <span class="mut" id="orgName">click the body</span></h3><div id="orgBody" class="muted" style="font-size:13.5px"></div></div>
+      <div class="card"><h3>Scan history</h3><div class="tl" id="twinTl"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- REPORTS -->
+<section class="view" id="v-reports">
+  <div class="h2">Analysis report</div>
+  <p class="sub">A structured report generated from the latest analysis and the doctor's decision. Add notes, then download it as a PDF or copy the text.</p>
+  <div class="twin">
+    <div class="report" id="reportBox"></div>
+    <div class="grid" style="align-content:start">
+      <div class="card">
+        <h3>Report options</h3>
+        <label class="muted" style="font-size:12px">Patient</label>
+        <select id="repSel" style="width:100%;margin:4px 0 12px"></select>
+        <label class="muted" style="font-size:12px">Doctor's notes</label>
+        <textarea id="repNotes" placeholder="Add clinical notes…" style="margin-top:4px"></textarea>
+        <div class="row" style="margin-top:12px">
+          <button class="btn pri" id="repPdf">Download PDF report</button>
+          <button class="btn" id="repCopy">Copy text</button>
+        </div>
+        <div class="dim" style="font-size:12px;margin-top:10px" id="dlNote"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BILLING -->
+<section class="view" id="v-billing">
+  <div class="h2">Billing &amp; payments <span class="badge-x" style="font-size:12px;vertical-align:middle">EXTRA MODULE</span></div>
+  <p class="sub">A clear view of each patient's bill: radiology, lab and pharmacy charges, insurance, discounts, payments and outstanding balance. New scans are added to the bill automatically. Demo amounts only.</p>
+  <div class="grid g4" id="finKpis" style="margin-bottom:16px"></div>
+  <div id="overdueBox"></div>
+  <div class="twin">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px">
+        <h3 style="margin:0">Patient bill</h3>
+        <div class="row"><select id="billSel"></select><span id="billStatus"></span></div>
+      </div>
+      <div id="billHead" class="muted" style="font-size:12.5px;margin-bottom:8px"></div>
+      <table class="bill-items" id="billItems"><thead><tr><th>Department</th><th>Description</th><th>Amount (₹)</th></tr></thead><tbody></tbody></table>
+      <div class="sum" id="billSum"></div>
+      <h3 style="margin-top:20px">Record a payment</h3>
+      <div class="form">
+        <label>Amount (₹)<input class="inp" id="payAmt" type="number" min="1" placeholder="e.g. 500"></label>
+        <label>Method<select id="payMethod"><option>UPI</option><option>Card</option><option>Cash</option><option>Net banking</option><option>Insurance</option></select></label>
+        <label>Reference<input class="inp" id="payRef" placeholder="Txn / receipt ref"></label>
+        <label>Discount %<input class="inp" id="discIn" type="number" min="0" max="100" placeholder="0"></label>
+        <button class="btn pri" id="payBtn">Add</button>
+      </div>
+      <h3 style="margin-top:20px">Payment history</h3>
+      <div style="overflow-x:auto"><table id="payTbl"><thead><tr><th>Date</th><th>Method</th><th>Reference</th><th>Amount</th><th>Verified</th><th></th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="grid" style="align-content:start">
+      <div class="card"><h3>Revenue by department</h3><div class="bars" id="deptBars"></div></div>
+      <div class="card">
+        <h3>Settings</h3>
+        <label class="muted" style="font-size:12px">GST on pharmacy items (%)</label>
+        <input class="inp" id="gstIn" type="number" min="0" max="28" value="12" style="width:100%;margin-top:4px">
+        <div class="dim" style="font-size:11.5px;margin-top:6px">Demo setting only. Confirm the actual tax rates with your accountant.</div>
+      </div>
+      <div class="card"><h3>Financial audit trail</h3><div class="log" id="logBill"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- HELP -->
+<section class="view" id="v-help">
+  <div class="h2">Tutorials &amp; help</div>
+  <p class="sub">Short, plain-language videos so anyone can use MEDI-VISION. Each card opens the video on YouTube.</p>
+  <div class="grid g3" id="vids"></div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <h3>Voice commands</h3>
+      <p class="muted" style="font-size:13px;margin-bottom:8px">Click the microphone (top right) and say one of these, or type them in the command box:</p>
+      <span class="vcmd">show high-priority patients</span><span class="vcmd">open patient MV-1024</span><span class="vcmd">upload scan</span><span class="vcmd">new patient</span><span class="vcmd">compare previous and current scans</span><span class="vcmd">generate medical report</span><span class="vcmd">open 3D twin</span><span class="vcmd">open billing</span><span class="vcmd">show dashboard</span>
+      <p class="dim" style="font-size:12px;margin-top:10px">Voice uses the browser's speech recognition. It works in Chrome and Edge and needs microphone permission. The typed command box works everywhere.</p>
+    </div>
+    <div class="card faq">
+      <h3>FAQ</h3>
+      <details><summary>Does MEDI-VISION diagnose disease?</summary><p>No. It's a decision-support prototype. It flags images that may need attention and helps order the review queue. A qualified clinician makes every diagnosis.</p></details>
+      <details><summary>Which body parts can I upload?</summary><p>Any of them: chest, head, spine, abdomen, pelvis, arms, legs and more, as X-ray, CT, MRI or ultrasound images. The quality and blur check works on all of them.</p></details>
+      <details><summary>Is the blur detection real?</summary><p>Yes. Sharpness is measured on your image using the variance of the Laplacian (a standard edge-sharpness measure), along with brightness and contrast checks. The thresholds are heuristics tuned for this demo.</p></details>
+      <details><summary>Is the heatmap from a trained model?</summary><p>Not in this prototype. Demo patients use prepared overlays. For uploads, the regions come from a simple brightness-anomaly heuristic that works on any grayscale image. Both are labelled "illustrative". A validated model (with Grad-CAM, for example) would replace this.</p></details>
+      <details><summary>What does "model confidence" mean?</summary><p>It's how strongly the output matches a trained pattern. It is <b>not</b> the probability that the patient has the disease, and it isn't diagnostic accuracy.</p></details>
+    </div>
+  </div>
+</section>
+
+</div></div></div>
+
+<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ CONFIG ============ */
+// Paste your team's YouTube links here (leave '' to show a placeholder).
+const TUTORIALS = [
+  {title:'Getting started in 2 minutes', desc:'A tour of the dashboard and the review queue.', dur:'2:00', url:''},
+  {title:'Adding a patient & uploading a scan', desc:'Upload any body part, and what to do if the image is blurry.', dur:'1:30', url:''},
+  {title:'Reading the AI heatmap', desc:'Switching between original and heatmap, and using the image tools.', dur:'2:15', url:''},
+  {title:'Before vs after comparison', desc:'Using the slider and change highlighting.', dur:'1:45', url:''},
+  {title:'3D Medi-Twin walkthrough', desc:'Rotating, zooming and clicking body parts.', dur:'2:00', url:''},
+  {title:'Reports, voice & billing', desc:'Generating a PDF report, voice commands and payments.', dur:'2:30', url:''},
+];
+// Body part -> [label, 3D region key]
+const BODY={chest:['Chest / lungs','lungs'],head:['Head / brain','brain'],heart:['Heart','heart'],abdomen:['Abdomen / liver','liver'],kidney:['Kidneys','kidneys'],spine:['Spine','spine'],pelvis:['Pelvis / hip','pelvis'],arm:['Arm / hand','arms'],leg:['Leg / knee / foot','legs'],other:['Other','skeleton']};
+// Image type -> [label, price ₹]
+const MODS={xray:['X-ray',850],ct:['CT scan',4500],mri:['MRI',5500],us:['Ultrasound',1200]};
+const ORG={brain:'Brain',lungs:'Lungs',heart:'Heart',liver:'Liver / abdomen',stomach:'Stomach',kidneys:'Kidneys',spine:'Spine',pelvis:'Pelvis / hip',arms:'Arm bones',legs:'Leg bones',ribs:'Ribs',skeleton:'Skeleton'};
+
+/* ============ HELPERS ============ */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const today=new Date(); const iso=d=>d.toISOString().slice(0,10);
+const daysAgo=n=>{const d=new Date(today);d.setDate(d.getDate()-n);return iso(d)};
+const daysFwd=n=>daysAgo(-n);
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600)}
+function modal(html){$('#modalBox').innerHTML=html;$('#modal').classList.add('show')}
+function closeModal(){$('#modal').classList.remove('show')}
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal'||e.target.closest('[data-close]'))closeModal()});
+function rng(seed){let s=seed%2147483647;if(s<=0)s+=2147483646;return()=>(s=s*16807%2147483647)/2147483647}
+const ctx2=cv=>cv.getContext('2d',{willReadFrequently:true});
+const log=[];
+function addLog(msg,kind='clin'){log.unshift({t:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),msg,kind});renderLogs()}
+function renderLogs(){const h=a=>a.length?a.map(l=>`<div><span class="t">${l.t}</span><span>${esc(l.msg)}</span></div>`).join(''):'<div class="dim">No activity yet.</div>';
+  $('#logDash').innerHTML=h(log);$('#logBill').innerHTML=h(log.filter(l=>l.kind==='fin'))}
+
+/* ============ SYNTHETIC IMAGES ============ */
+function drawChest(cv,o={}){
+  const W=cv.width,H=cv.height,c=cv.getContext('2d',{willReadFrequently:true});const R=rng(o.seed||7);
+  const off=document.createElement('canvas');off.width=W;off.height=H;const x=off.getContext('2d',{willReadFrequently:true});
+  const sx=W/512,sy=H/512;x.save();x.scale(sx,sy);
+  x.fillStyle='#030303';x.fillRect(0,0,512,512);
+  // soft tissue
+  let g=x.createRadialGradient(256,300,40,256,300,280);g.addColorStop(0,'#7a7a7a');g.addColorStop(1,'#262626');
+  x.fillStyle=g;x.beginPath();x.ellipse(256,310,222,270,0,0,Math.PI*2);x.fill();
+  // shoulders
+  x.filter='blur(4px)';x.fillStyle='#4a4a4a';x.beginPath();x.ellipse(52,150,40,58,0,0,Math.PI*2);x.fill();x.beginPath();x.ellipse(460,150,40,58,0,0,Math.PI*2);x.fill();
+  // lungs (dark)
+  x.filter='blur(10px)';x.fillStyle='#0c0c0c';
+  x.beginPath();x.moveTo(230,95);x.bezierCurveTo(150,90,90,180,92,300);x.bezierCurveTo(92,380,110,420,150,430);x.bezierCurveTo(190,420,225,410,232,390);x.closePath();x.fill();
+  x.beginPath();x.moveTo(282,95);x.bezierCurveTo(362,90,420,180,420,300);x.bezierCurveTo(420,385,400,425,360,435);x.bezierCurveTo(330,430,300,420,288,400);x.closePath();x.fill();
+  // lung texture (vessels)
+  x.filter='blur(1.5px)';x.strokeStyle='rgba(120,120,120,.22)';x.lineWidth=2;
+  for(let i=0;i<70;i++){const side=i%2?1:-1;const sx0=256+side*35,sy0=250+R()*60;x.beginPath();x.moveTo(sx0,sy0);
+    x.quadraticCurveTo(256+side*(60+R()*80),sy0+(R()-.5)*120,256+side*(80+R()*110),sy0+(R()-.5)*220);x.stroke()}
+  // heart / mediastinum
+  const hb=o.heartBig||1;x.filter='blur(10px)';x.fillStyle='rgba(150,150,150,.9)';
+  x.beginPath();x.ellipse(256,200,30,110,0,0,Math.PI*2);x.fill();
+  x.beginPath();x.ellipse(284,350,60*hb,66*Math.sqrt(hb),-.3,0,Math.PI*2);x.fill();
+  // diaphragm
+  x.fillStyle='#8f8f8f';x.beginPath();x.ellipse(160,450,98,40,0,Math.PI,0);x.lineTo(258,512);x.lineTo(62,512);x.fill();
+  x.beginPath();x.ellipse(356,458,98,38,0,Math.PI,0);x.lineTo(454,512);x.lineTo(258,512);x.fill();
+  // spine
+  x.filter='blur(2px)';x.fillStyle='#bdbdbd';x.fillRect(240,40,32,472);
+  x.fillStyle='rgba(60,60,60,.5)';for(let y=60;y<512;y+=26)x.fillRect(240,y,32,3);
+  // ribs
+  x.filter='blur(1.6px)';x.strokeStyle='rgba(225,225,225,.28)';x.lineWidth=6;
+  for(let i=0;i<10;i++){const y=110+i*30;for(const s of[-1,1]){x.beginPath();x.moveTo(256+s*18,y);x.bezierCurveTo(256+s*120,y-38,256+s*205,y-5,256+s*196,y+48);x.stroke();
+    x.beginPath();x.moveTo(256+s*196,y+48);x.quadraticCurveTo(256+s*150,y+70,256+s*80,y+92);x.lineWidth=4;x.strokeStyle='rgba(225,225,225,.1)';x.stroke();x.lineWidth=6;x.strokeStyle='rgba(225,225,225,.28)'}}
+  // clavicles
+  x.lineWidth=10;x.strokeStyle='rgba(235,235,235,.55)';
+  for(const s of[-1,1]){x.beginPath();x.moveTo(256+s*22,98);x.quadraticCurveTo(256+s*110,70,256+s*185,78);x.stroke()}
+  // opacities
+  x.filter='blur(6px)';
+  (o.hot||[]).forEach(h=>{const gg=x.createRadialGradient(h.x*512,h.y*512,0,h.x*512,h.y*512,h.r*512);
+    gg.addColorStop(0,`rgba(235,235,235,${.62*h.s})`);gg.addColorStop(.6,`rgba(210,210,210,${.32*h.s})`);gg.addColorStop(1,'rgba(200,200,200,0)');
+    x.fillStyle=gg;x.beginPath();x.arc(h.x*512,h.y*512,h.r*512,0,Math.PI*2);x.fill()});
+  x.filter='none';
+  // marker
+  x.fillStyle='rgba(255,255,255,.8)';x.font='bold 20px monospace';x.fillText('R',24,495);
+  x.restore();
+  // noise
+  const id=x.getImageData(0,0,W,H),d=id.data;for(let i=0;i<d.length;i+=4){const n=(R()-.5)*14;d[i]+=n;d[i+1]+=n;d[i+2]+=n}
+  x.putImageData(id,0,0);
+  c.filter=o.blur?`blur(${o.blur}px)`:'none';c.fillStyle='#000';c.fillRect(0,0,W,H);c.drawImage(off,0,0);c.filter='none';
+}
+function drawBrain(cv,o={}){
+  const c=cv.getContext('2d',{willReadFrequently:true});const R=rng(o.seed||5);c.fillStyle='#000';c.fillRect(0,0,512,512);
+  c.filter='blur(1.5px)';c.fillStyle='#d8d8d8';c.beginPath();c.ellipse(256,260,170,205,0,0,Math.PI*2);c.fill();
+  c.fillStyle='#202020';c.beginPath();c.ellipse(256,260,156,191,0,0,Math.PI*2);c.fill();
+  c.fillStyle='#8c8c8c';c.beginPath();c.ellipse(256,260,148,183,0,0,Math.PI*2);c.fill();
+  c.strokeStyle='rgba(40,40,40,.5)';c.lineWidth=3;for(let i=0;i<60;i++){const a=R()*Math.PI*2;c.beginPath();c.moveTo(256+Math.cos(a)*145,260+Math.sin(a)*178);c.lineTo(256+Math.cos(a)*(110+R()*20),260+Math.sin(a)*(140+R()*20));c.stroke()}
+  c.fillStyle='#b2b2b2';c.beginPath();c.ellipse(256,260,100,130,0,0,Math.PI*2);c.fill();
+  c.fillStyle='#1a1a1a';for(const s of[-1,1]){c.beginPath();c.ellipse(256+s*22,240,14,52,s*.3,0,Math.PI*2);c.fill()}
+  c.fillRect(252,90,8,340);c.filter='none';
+  const id=c.getImageData(0,0,512,512),d=id.data;for(let i=0;i<d.length;i+=4){const n=(R()-.5)*14;d[i]+=n;d[i+1]+=n;d[i+2]+=n}c.putImageData(id,0,0);
+}
+function drawHeat(cv,hots){
+  const c=cv.getContext('2d',{willReadFrequently:true});c.clearRect(0,0,cv.width,cv.height);const W=cv.width;
+  hots.forEach(h=>{const r=h.r*W*1.7;const g=c.createRadialGradient(h.x*W,h.y*W,0,h.x*W,h.y*W,r);
+    g.addColorStop(0,`rgba(255,30,30,${.85*Math.min(1,h.s+.15)})`);g.addColorStop(.35,'rgba(255,170,0,.55)');g.addColorStop(.7,'rgba(40,140,255,.22)');g.addColorStop(1,'rgba(0,80,255,0)');
+    c.fillStyle=g;c.beginPath();c.arc(h.x*W,h.y*W,r,0,Math.PI*2);c.fill();
+    c.strokeStyle='rgba(255,255,255,.85)';c.setLineDash([6,5]);c.lineWidth=1.5;c.beginPath();c.arc(h.x*W,h.y*W,h.r*W*1.15,0,Math.PI*2);c.stroke();c.setLineDash([])});
+}
+
+/* ============ IMAGE QUALITY (real) ============ */
+function quality(cv){
+  const W=256,H=256;const t=document.createElement('canvas');t.width=W;t.height=H;const c=t.getContext('2d',{willReadFrequently:true});c.drawImage(cv,0,0,W,H);
+  const d=c.getImageData(0,0,W,H).data;const g=new Float32Array(W*H);let sum=0,sat=0;
+  for(let i=0,j=0;i<d.length;i+=4,j++){const r=d[i],gg=d[i+1],b=d[i+2];g[j]=.299*r+.587*gg+.114*b;sum+=g[j];sat+=Math.max(r,gg,b)-Math.min(r,gg,b)}
+  const mean=sum/(W*H);let v=0;for(let j=0;j<g.length;j++)v+=(g[j]-mean)**2;const std=Math.sqrt(v/(W*H));
+  let ls=0,ls2=0,n=0;for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){const k=y*W+x;const L=g[k-1]+g[k+1]+g[k-W]+g[k+W]-4*g[k];ls+=L;ls2+=L*L;n++}
+  const lapVar=ls2/n-(ls/n)**2;const colour=sat/(W*H);
+  const sharp=lapVar<25?'Poor':lapVar<80?'Fair':'Good';
+  const expo=mean<30?'Underexposed':mean>215?'Overexposed':'Acceptable';
+  const contr=std<22?'Low':'Acceptable';
+  let overall=sharp;if(expo!=='Acceptable'||contr==='Low')overall=overall==='Good'?'Fair':'Poor';
+  return{lapVar,mean,std,colour,sharp,expo,contr,overall,gray:colour<12};
+}
+/* heuristic regions for uploaded images (illustrative) */
+function heuristicHot(cv){
+  const N=32;const t=document.createElement('canvas');t.width=N;t.height=N;const c=t.getContext('2d',{willReadFrequently:true});c.drawImage(cv,0,0,N,N);
+  const d=c.getImageData(0,0,N,N).data;const g=[];for(let i=0;i<N*N;i++)g.push(.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2]);
+  const cand=[];for(let y=5;y<N-5;y++)for(let x=4;x<N-4;x++){if(Math.abs(x-N/2)<3)continue;let s=0,k=0;for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){if(Math.abs(dx)<2&&Math.abs(dy)<2)continue;s+=g[(y+dy)*N+x+dx];k++}
+    const loc=(g[y*N+x]+g[y*N+x-1]+g[y*N+x+1]+g[(y-1)*N+x]+g[(y+1)*N+x])/5;cand.push({x,y,z:loc-s/k})}
+  const zs=cand.map(c=>c.z);const m=zs.reduce((a,b)=>a+b,0)/zs.length;const sd=Math.sqrt(zs.reduce((a,b)=>a+(b-m)**2,0)/zs.length)||1;
+  cand.forEach(c=>c.zz=(c.z-m)/sd);cand.sort((a,b)=>b.zz-a.zz);
+  const out=[];for(const c of cand){if(c.zz<2)break;if(out.some(o=>Math.hypot(o.x*N-c.x,o.y*N-c.y)<6))continue;out.push({x:(c.x+.5)/N,y:(c.y+.5)/N,r:.07,s:Math.min(1,c.zz/4),zz:c.zz});if(out.length>=2)break}
+  return out;
+}
+
+
+
+/* ============ DATA MODEL ============
+ Patient: {id,name,age,sex,status,decision,comments,priority,scans:[Scan]}
+ Scan: {id,d,part,mod,img(Image|null),synth(obj|null),hot:[],q,conf,finding,note,thumb}
+*/
+let scanN=1;
+function mkScan(o){return Object.assign({id:'S'+(scanN++),hot:[],conf:null,finding:'',note:''},o)}
+const P=[
+ {id:'MV-1024',name:'Arjun Sharma',age:58,sex:'M',priority:'P1',status:'Pending doctor review',scans:[
+   mkScan({d:daysAgo(190),part:'chest',mod:'xray',synth:{k:'chest',seed:11},hot:[{x:.33,y:.62,r:.055,s:.55}],conf:58,finding:'Faint density, right lower zone',note:'Baseline. Follow-up advised.'}),
+   mkScan({d:daysAgo(2),part:'chest',mod:'xray',synth:{k:'chest',seed:11},hot:[{x:.33,y:.62,r:.1,s:1}],conf:92,finding:'Possible abnormal opacity, right lower zone',note:'Flagged region larger than at baseline.'})]},
+ {id:'MV-1025',name:'Kavya Reddy',age:44,sex:'F',priority:'P1',status:'Pending doctor review',scans:[
+   mkScan({d:daysAgo(400),part:'chest',mod:'xray',synth:{k:'chest',seed:23},conf:16,finding:'No region flagged',note:'Routine scan.'}),
+   mkScan({d:daysAgo(1),part:'chest',mod:'xray',synth:{k:'chest',seed:23},hot:[{x:.68,y:.47,r:.09,s:.9}],conf:84,finding:'Possible consolidation, left mid zone',note:'New region flagged.'})]},
+ {id:'MV-1026',name:'Suresh Rao',age:67,sex:'M',priority:'P2',status:'In review',scans:[
+   mkScan({d:daysAgo(3),part:'chest',mod:'xray',synth:{k:'chest',seed:37,blur:1.4},hot:[{x:.3,y:.76,r:.08,s:.75}],conf:73,finding:'Possible blunting at right base',note:'Slightly soft image.'})]},
+ {id:'MV-1027',name:'Priya Naidu',age:35,sex:'F',priority:'P3',status:'Completed',decision:'Accepted',comments:'No concern.',scans:[
+   mkScan({d:daysAgo(4),part:'chest',mod:'xray',synth:{k:'chest',seed:41},conf:18,finding:'No region flagged',note:'Routine check.'})]},
+ {id:'MV-1028',name:'Mohan Iyer',age:51,sex:'M',priority:'P2',status:'Pending doctor review',scans:[
+   mkScan({d:daysAgo(1),part:'chest',mod:'xray',synth:{k:'chest',seed:53,blur:4.5},hot:[{x:.64,y:.3,r:.06,s:.8}],conf:61,finding:'Possible small nodule, left upper zone',note:'Image blurred. Repeat scan recommended.'})]},
+ {id:'MV-1029',name:'Lakshmi Das',age:29,sex:'F',priority:'P3',status:'Pending doctor review',scans:[
+   mkScan({d:daysAgo(5),part:'head',mod:'mri',synth:{k:'brain',seed:61},conf:21,finding:'No region flagged',note:'Headache work-up.'})]},
+ {id:'MV-1030',name:'Ramesh Varma',age:72,sex:'M',priority:'P2',status:'Pending doctor review',scans:[
+   mkScan({d:daysAgo(365),part:'heart',mod:'xray',synth:{k:'chest',seed:71,heartBig:1.1},hot:[{x:.56,y:.66,r:.12,s:.45}],conf:55,finding:'Borderline cardiac silhouette',note:'Borderline heart size.'}),
+   mkScan({d:daysAgo(2),part:'heart',mod:'xray',synth:{k:'chest',seed:71,heartBig:1.25},hot:[{x:.56,y:.66,r:.15,s:.7}],conf:78,finding:'Possible enlarged cardiac silhouette',note:'Compared with last year.'})]},
+ {id:'MV-1031',name:'Neha Gupta',age:40,sex:'F',priority:'P2',status:'Completed',decision:'Rejected',comments:'Overlapping breast shadow.',scans:[
+   mkScan({d:daysAgo(6),part:'chest',mod:'xray',synth:{k:'chest',seed:83},hot:[{x:.3,y:.45,r:.07,s:.6}],conf:69,finding:'Possible opacity, right mid zone',note:'AI flag rejected by doctor.'})]},
+];
+P.forEach(p=>{p.comments=p.comments||'';p.decision=p.decision||null});
+const BILL={
+ 'MV-1024':{items:[['Radiology','Chest X-ray (baseline)',850],['Radiology','Chest X-ray',850],['Radiology','AI-assisted image review',300],['Laboratory','Complete blood count',450],['Pharmacy','Prescribed medicines',1240]],disc:0,ins:{prov:'Star Health',amt:1500,st:'Approved'},pays:[[daysAgo(2),'UPI','UPI-88213',800,true]],due:daysFwd(5)},
+ 'MV-1025':{items:[['Radiology','Chest X-ray',850],['Radiology','AI-assisted image review',300],['Laboratory','Sputum culture',900],['Pharmacy','Antibiotic course',680]],disc:10,ins:null,pays:[[daysAgo(1),'Card','CRD-4471',2000,true]],due:daysFwd(10)},
+ 'MV-1026':{items:[['Radiology','Chest X-ray (PA + lateral)',1200],['Laboratory','Pleural fluid analysis',1500],['Pharmacy','Medicines',540]],disc:0,ins:{prov:'ICICI Lombard',amt:2000,st:'Pending'},pays:[],due:daysAgo(4)},
+ 'MV-1027':{items:[['Radiology','Chest X-ray',850],['Radiology','AI-assisted image review',300]],disc:0,ins:null,pays:[[daysAgo(4),'Cash','RCPT-1027',1150,true]],due:daysAgo(4)},
+ 'MV-1028':{items:[['Radiology','Chest X-ray',850],['Radiology','Repeat X-ray (blurred image)',0],['Laboratory','CBC',450]],disc:0,ins:null,pays:[],due:daysAgo(9)},
+ 'MV-1029':{items:[['Radiology','MRI Brain (plain)',5500],['Laboratory','Thyroid profile',700],['Pharmacy','Medicines',320]],disc:5,ins:{prov:'Niva Bupa',amt:4000,st:'Approved'},pays:[[daysAgo(5),'Net banking','NB-77120',1500,true],[daysAgo(1),'UPI','UPI-90321',500,false]],due:daysFwd(7)},
+ 'MV-1030':{items:[['Radiology','Chest X-ray',850],['Radiology','AI-assisted image review',300],['Laboratory','NT-proBNP',2200],['Pharmacy','Cardiac medicines',1890]],disc:0,ins:{prov:'Ayushman Bharat',amt:4000,st:'Approved'},pays:[[daysAgo(2),'Insurance','CLM-30021',1240,true]],due:daysFwd(14)},
+ 'MV-1031':{items:[['Radiology','Chest X-ray',850],['Radiology','AI-assisted image review',300],['Pharmacy','Medicines',210]],disc:0,ins:null,pays:[[daysAgo(6),'UPI','UPI-55102',1386,true]],due:daysAgo(6)},
+};
+let GST=12, patN=1032;
+const last=p=>p.scans[p.scans.length-1]||null;
+const findP=id=>P.find(p=>p.id===id);
+const partName=k=>(BODY[k]||BODY.other)[0];
+const modName=k=>(MODS[k]||['Scan'])[0];
+const isDone=p=>p.status==='Completed';
+
+/* ============ SCAN DRAWING & ANALYSIS ============ */
+function drawScan(cv,s){const c=ctx2(cv);c.filter='none';c.fillStyle='#000';c.fillRect(0,0,cv.width,cv.height);if(!s)return;
+  if(s.img){const im=s.img;const k=Math.min(cv.width/im.width,cv.height/im.height);const w=im.width*k,h=im.height*k;c.drawImage(im,(cv.width-w)/2,(cv.height-h)/2,w,h);return}
+  if(s.synth.k==='brain')return drawBrain(cv,{seed:s.synth.seed});
+  drawChest(cv,{seed:s.synth.seed,hot:s.hot,blur:s.synth.blur,heartBig:s.synth.heartBig})}
+function scanQuality(s){if(!s.q){const c=document.createElement('canvas');c.width=c.height=512;drawScan(c,s);s.q=quality(c)}return s.q}
+function scanThumb(s){if(!s.thumb){const c=document.createElement('canvas');c.width=c.height=512;drawScan(c,s);const t=document.createElement('canvas');t.width=t.height=88;t.getContext('2d').drawImage(c,0,0,88,88);s.thumb=t.toDataURL('image/jpeg',.8)}return s.thumb}
+function pQuality(p){const s=last(p);return s?scanQuality(s).overall:'—'}
+function locWords(h){const v=h.y<.36?'upper':h.y<.64?'middle':'lower';const side=h.x<.42?'right':h.x>.58?'left':'central';return side==='central'?`${v} central area`:`${v} ${side} side`}
+function analyseUpload(p,s){
+  const c=document.createElement('canvas');c.width=c.height=512;drawScan(c,s);const q=quality(c);s.q=q;
+  if(!q.gray){s.hot=[];s.conf=null;s.finding='Not analysed: colour image, may not be a medical scan';p.priority='P3';return}
+  s.hot=heuristicHot(c);const top=s.hot[0];
+  let conf=top?Math.round(Math.min(90,50+top.zz*9)):Math.round(12+Math.random()*10);
+  if(q.overall==='Poor')conf=Math.round(conf*.75);else if(q.overall==='Fair')conf=Math.round(conf*.9);s.conf=conf;
+  s.finding=top?`Possible area of abnormal density, ${partName(s.part).split(' /')[0].toLowerCase()} (${locWords(top)})`:'No region flagged';
+  p.priority=!top?'P3':conf>=80&&q.overall!=='Poor'?'P1':conf>=55?'P2':'P3';
+  if(q.overall==='Poor'&&!top){s.finding='Image quality too low for reliable analysis: repeat scan advised';p.priority='P2'}
+}
+function drawHeat2(cv,hots){drawHeat(cv,hots||[])}
+
+/* ============ ROUTING ============ */
+// Navigation uses click handlers (not <a href="#...">), because some preview frames intercept link clicks.
+const VIEWS=['dashboard','analyze','compare','twin','reports','billing','help'];let curView=null;
+function show(v){if(!VIEWS.includes(v))v='dashboard';curView=v;
+  $$('section.view').forEach(s=>s.classList.toggle('show',s.id==='v-'+v));$$('.nav [data-go]').forEach(a=>a.classList.toggle('active',a.dataset.go===v));
+  try{({dashboard:renderDash,analyze:loadAnalyze,compare:renderCompare,twin:()=>T.onShow(),reports:renderReport,billing:renderBilling,help:()=>{}})[v]()}catch(e){console.error(e)}
+  window.scrollTo(0,0)}
+function go(v){show(v);try{history.replaceState(null,'','#'+v)}catch(e){}}
+const route=()=>show(curView||'dashboard');
+document.addEventListener('click',e=>{const a=e.target.closest('[data-go]');if(!a)return;e.preventDefault();go(a.dataset.go)});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'){const a=e.target.closest&&e.target.closest('[data-go]');if(a){e.preventDefault();go(a.dataset.go)}}});
+window.addEventListener('hashchange',()=>{const v=(location.hash||'').slice(1);if(VIEWS.includes(v)&&v!==curView)show(v)});
+
+/* ============ SHARED PATIENT SELECTION ============ */
+let curId=P[0].id;const cur=()=>findP(curId)||P[0];
+function setCur(id){if(!findP(id))return false;curId=id;['#patSel','#twinSel','#repSel','#billSel','#cmpSel'].forEach(s=>{if($(s))$(s).value=id});return true}
+function fillSelects(){const opts=P.map(p=>`<option value="${p.id}">${p.id} · ${esc(p.name)}</option>`).join('');
+  ['#patSel','#twinSel','#repSel','#billSel','#cmpSel'].forEach(s=>{$(s).innerHTML=opts;$(s).value=curId})}
+['#patSel','#twinSel','#repSel','#billSel','#cmpSel'].forEach(s=>$(s).addEventListener('change',e=>{setCur(e.target.value);
+  ({'#patSel':()=>{resetView();loadAnalyze()},'#twinSel':()=>T.refresh(),'#repSel':renderReport,'#billSel':renderBilling,'#cmpSel':()=>{cmpPick=null;renderCompare()}})[s]()}));
+
+/* ============ NEW PATIENT / UPLOAD MODAL ============ */
+const partOpts=sel=>Object.entries(BODY).map(([k,v])=>`<option value="${k}" ${k===sel?'selected':''}>${v[0]}</option>`).join('');
+const modOpts=sel=>Object.entries(MODS).map(([k,v])=>`<option value="${k}" ${k===sel?'selected':''}>${v[0]}</option>`).join('');
+function openUploadModal(pid){const p=pid?findP(pid):null;
+  modal(`<h3>${p?'Upload scan for '+esc(p.name)+' <span class="mono dim" style="font-size:13px">'+p.id+'</span>':'New patient'}</h3>
+   <p class="muted" style="font-size:13px">${p?'Add a new scan of any body part. It becomes the patient\'s latest scan and is analysed straight away.':'Enter the patient\'s details and upload their first scan. Use anonymised or approved images only.'}</p>
+   <div class="fgrid">
+    ${p?'':`<label class="full">Patient name<input class="inp" id="mName" placeholder="e.g. Anil Kumar"></label>
+    <label>Age<input class="inp" id="mAge" type="number" min="0" max="120" placeholder="e.g. 45"></label>
+    <label>Sex<select id="mSex"><option value="M">Male</option><option value="F">Female</option><option value="O">Other</option></select></label>`}
+    <label>Body part<select id="mPart">${partOpts(p&&last(p)?last(p).part:'chest')}</select></label>
+    <label>Image type<select id="mMod">${modOpts('xray')}</select></label>
+    <div class="full drop" id="mDrop"><b>Click or drop the scan image here</b> (PNG/JPG)<div id="mFileName" class="dim" style="font-size:12px;margin-top:4px">No file chosen</div><input type="file" id="mFile" accept="image/*" hidden></div>
+   </div>
+   <div class="row" style="justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn pri" id="mGo">Upload &amp; analyse</button></div>`);
+  let file=null;const d=$('#mDrop');d.onclick=()=>$('#mFile').click();
+  const pick=f=>{if(!f||!f.type.startsWith('image/')){toast('Please choose an image file (PNG or JPG).');return}file=f;$('#mFileName').textContent=f.name};
+  $('#mFile').onchange=e=>pick(e.target.files[0]);d.ondragover=e=>{e.preventDefault();d.classList.add('over')};d.ondragleave=()=>d.classList.remove('over');d.ondrop=e=>{e.preventDefault();d.classList.remove('over');pick(e.dataTransfer.files[0])};
+  $('#mGo').onclick=()=>{let pt=p;
+    if(!pt){const n=$('#mName').value.trim();if(!n){toast('Enter the patient name');return}}
+    if(!file){toast('Choose a scan image to upload');return}
+    if(!pt){pt={id:'MV-'+(patN++),name:$('#mName').value.trim(),age:+$('#mAge').value||'—',sex:$('#mSex').value,priority:'P3',status:'Pending doctor review',decision:null,comments:'',scans:[]};
+      P.push(pt);BILL[pt.id]={items:[],disc:0,ins:null,pays:[],due:daysFwd(15)};addLog(`${pt.id}: new patient ${pt.name} registered`)}
+    closeModal();uploadScan(pt,file,$('#mPart').value,$('#mMod').value)}}
+function uploadScan(p,f,part,mod){
+  const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{
+    const s=mkScan({d:iso(today),part,mod,img:im,note:'Uploaded: '+f.name});p.scans.push(s);
+    p.status='Pending doctor review';p.decision=null;
+    BILL[p.id].items.push(['Radiology',`${modName(mod)}: ${partName(part)}`,MODS[mod][1]],['Radiology','AI-assisted image review',300]);
+    fillSelects();setCur(p.id);addLog(`${p.id}: ${modName(mod)} of ${partName(part).toLowerCase()} uploaded (${f.name})`);
+    resetView();go('analyze');runAnalysisAnim(p,s)};im.onerror=()=>toast('Could not read that image.');im.src=r.result};r.readAsDataURL(f)}
+
+/* ============ DASHBOARD ============ */
+let qFilter='all',qSort={k:'priority',d:1};
+const prRank={P1:1,P2:2,P3:3},qRank={Good:1,Fair:2,Poor:3,'—':4};
+function prPill(p){const l={P1:'Priority 1',P2:'Priority 2',P3:'Priority 3'};return`<span class="pr ${p.toLowerCase()}">${l[p]}</span>`}
+function stPill(s){return`<span class="st ${s==='Completed'?'done':s==='In review'?'rev':''}">${s}</span>`}
+function renderDash(){
+  const tot=P.reduce((a,p)=>a+p.scans.length,0),aw=P.filter(p=>!isDone(p)).length,hi=P.filter(p=>p.priority==='P1'&&!isDone(p)).length,dn=P.filter(isDone).length;
+  $('#kpis').innerHTML=[['Total scans analysed',tot,P.length+' patients','var(--blue)'],['Cases awaiting review',aw,'pending or in review','var(--p2)'],['High-priority cases',hi,'Priority 1, not yet reviewed','var(--p1)'],['Completed reviews',dn,'doctor decision recorded','var(--p3)']]
+   .map(k=>`<div class="card kpi" style="--k:${k[3]}"><div class="lbl">${k[0]}</div><div class="num">${k[1]}</div><div class="hint">${k[2]}</div></div>`).join('');
+  const c={P1:0,P2:0,P3:0};P.forEach(p=>c[p.priority]++);const mx=Math.max(...Object.values(c),1);
+  $('#prBars').innerHTML=[['P1','🔴 Urgent','var(--p1)'],['P2','🟠 Prompt','var(--p2)'],['P3','🟢 Routine','var(--p3)']].map(b=>`<div class="bar"><span>${b[1]}</span><div class="track"><div class="fill" style="width:${c[b[0]]/mx*100}%;background:${b[2]}"></div></div><b>${c[b[0]]}</b></div>`).join('');
+  const pc={};P.forEach(p=>p.scans.forEach(s=>pc[s.part]=(pc[s.part]||0)+1));const pm=Math.max(...Object.values(pc),1);
+  $('#partBars').innerHTML=Object.entries(pc).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="bar"><span>${partName(k).split(' /')[0]}</span><div class="track"><div class="fill" style="width:${v/pm*100}%;background:var(--accent)"></div></div><b>${v}</b></div>`).join('');
+  const s=$('#qSearch').value.toLowerCase().trim();
+  let rows=P.filter(p=>qFilter==='all'||p.priority===qFilter||(qFilter==='await'&&!isDone(p))||(qFilter==='done'&&isDone(p)))
+    .filter(p=>{if(!s)return true;const l=last(p);return(p.id+' '+p.name+' '+(l?partName(l.part)+' '+l.finding+' '+modName(l.mod):'')).toLowerCase().includes(s)});
+  const val=(p,k)=>{const l=last(p);if(k==='priority')return prRank[p.priority];if(k==='quality')return qRank[pQuality(p)];if(k==='confidence')return l&&l.conf!=null?l.conf:-1;if(k==='part')return l?partName(l.part):'';return String(p[k]).toLowerCase()};
+  rows.sort((a,b)=>{const x=val(a,qSort.k),y=val(b,qSort.k);return((x>y)-(x<y))*qSort.d||(prRank[a.priority]-prRank[b.priority])});
+  $$('#qTable th[data-s]').forEach(th=>{th.classList.toggle('sorted',th.dataset.s===qSort.k);th.textContent=th.textContent.replace(/ [↑↓]$/,'')+(th.dataset.s===qSort.k?(qSort.d>0?' ↑':' ↓'):'')});
+  $('#qCount').textContent=`${rows.length} of ${P.length} patients`;
+  $('#qTable tbody').innerHTML=rows.map(p=>{const l=last(p);return`<tr data-row="${p.id}" style="cursor:pointer"><td>${prPill(p.priority)}</td>
+    <td>${l?`<img class="thumbc" src="${scanThumb(l)}" alt="">`:'<span class="dim">—</span>'}</td>
+    <td class="mono">${p.id}</td><td class="nw"><b style="font-weight:500">${esc(p.name)}</b></td><td class="muted nw">${p.age}/${p.sex}</td>
+    <td class="nw">${l?partName(l.part).split(' /')[0]+'<div class="dim" style="font-size:11.5px">'+modName(l.mod)+' · '+p.scans.length+' scan'+(p.scans.length>1?'s':'')+'</div>':'—'}</td>
+    <td style="max-width:240px">${l?esc(l.finding):'<span class="dim">No scan yet</span>'}</td>
+    <td class="mono">${l&&l.conf!=null?l.conf+'%':'<span class="dim">n/a</span>'}</td><td>${pQuality(p)}</td>
+    <td>${stPill(p.status)}${p.decision?`<div class="dim" style="font-size:11.5px">${p.decision}</div>`:''}</td>
+    <td><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm" data-open="${p.id}">Open</button><button class="btn sm" data-up="${p.id}">⇪ Upload</button></div></td></tr>`}).join('')||'<tr><td colspan="11" class="dim" style="text-align:center;padding:24px">No patients match this filter.</td></tr>';
+}
+$('#filters').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;setFilter(b.dataset.f);renderDash()});
+$('#qSearch').addEventListener('input',renderDash);
+$$('#qTable th[data-s]').forEach(th=>th.addEventListener('click',()=>{const k=th.dataset.s;qSort=qSort.k===k?{k,d:-qSort.d}:{k,d:1};renderDash()}));
+$('#qTable').addEventListener('click',e=>{const up=e.target.closest('[data-up]');if(up){e.stopPropagation();openUploadModal(up.dataset.up);return}
+  const r=e.target.closest('[data-open],[data-row]');if(r)openPatient(r.dataset.open||r.dataset.row)});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="newpat"]');if(b)openUploadModal(null)});
+function setFilter(f){qFilter=f;$$('#filters .chip').forEach(c=>c.classList.toggle('on',c.dataset.f===f))}
+
+/* ============ ANALYZE ============ */
+let viewScanId=null;const view={z:1,rot:0,px:0,py:0,inv:false,heat:true};
+function curScan(){const p=cur();return p.scans.find(s=>s.id===viewScanId)||last(p)}
+function openPatient(id,dest='analyze'){if(!setCur(id)){toast('Patient '+id+' not found');return}viewScanId=null;resetView();go(dest)}
+function applyView(){$('#stage').style.transform=`translate(${view.px}px,${view.py}px) scale(${view.z}) rotate(${view.rot}deg)`;
+  $('#cvImg').style.filter=`brightness(${$('#tBri').value}%) contrast(${$('#tCon').value}%)${view.inv?' invert(1)':''}`;
+  $('#cvHeat').style.opacity=view.heat?$('#tHeat').value/100:0;$('#vOrig').classList.toggle('on',!view.heat);$('#vHeat').classList.toggle('on',view.heat);
+  $('#hudR').innerHTML=`ZOOM ${view.z.toFixed(1)}×<br>ROT ${view.rot}°<br>${view.heat?'HEATMAP ON':'ORIGINAL'}`}
+function resetView(){Object.assign(view,{z:1,rot:0,px:0,py:0,inv:false,heat:true});$('#tZoom').value=1;$('#tBri').value=100;$('#tCon').value=100;$('#tInv').classList.remove('on');applyView()}
+$('#tZoom').oninput=e=>{view.z=+e.target.value;if(view.z===1){view.px=view.py=0}applyView()};
+['#tBri','#tCon','#tHeat'].forEach(s=>$(s).oninput=applyView);
+$('#tRotL').onclick=()=>{view.rot-=90;applyView()};$('#tRotR').onclick=()=>{view.rot+=90;applyView()};
+$('#tInv').onclick=()=>{view.inv=!view.inv;$('#tInv').classList.toggle('on',view.inv);applyView()};$('#tReset').onclick=resetView;
+$('#vOrig').onclick=()=>{view.heat=false;applyView()};$('#vHeat').onclick=()=>{view.heat=true;applyView()};
+(()=>{const v=$('#viewer');let d=null;v.addEventListener('pointerdown',e=>{if(view.z<=1)return;d={x:e.clientX-view.px,y:e.clientY-view.py};v.classList.add('drag');v.setPointerCapture(e.pointerId)});
+ v.addEventListener('pointermove',e=>{if(!d)return;view.px=e.clientX-d.x;view.py=e.clientY-d.y;$('#stage').style.transition='none';applyView()});
+ v.addEventListener('pointerup',()=>{d=null;v.classList.remove('drag');$('#stage').style.transition=''});
+ v.addEventListener('wheel',e=>{e.preventDefault();view.z=Math.min(4,Math.max(1,view.z-e.deltaY*.002));if(view.z===1)view.px=view.py=0;$('#tZoom').value=view.z;applyView()},{passive:false})})();
+$('#scanSel').onchange=e=>{viewScanId=e.target.value;loadAnalyze()};
+function loadAnalyze(){const p=cur();const s=curScan();
+  $('#upFor').textContent=p.name+' ('+p.id+')';$('#upPart').innerHTML=partOpts(s?s.part:'chest');$('#upMod').innerHTML=modOpts(s?s.mod:'xray');
+  $('#scanSel').innerHTML=p.scans.map((x,i)=>`<option value="${x.id}">${x.d} · ${modName(x.mod)} · ${partName(x.part).split(' /')[0]}${i===p.scans.length-1?' (latest)':''}</option>`).join('')||'<option>No scans</option>';
+  if(s)$('#scanSel').value=s.id;
+  $('#vEmpty').style.display=s?'none':'grid';drawScan($('#cvImg'),s);
+  if(!s){ctx2($('#cvHeat')).clearRect(0,0,512,512);$('#hudL').innerHTML='';
+    $('#qualBody').innerHTML='<span class="dim">Upload a scan to run the quality check.</span>';$('#confBody').innerHTML='<span class="dim">No analysis yet.</span>';$('#whyList').innerHTML='';renderDecision();return}
+  scanQuality(s);drawHeat2($('#cvHeat'),s.hot);
+  $('#hudL').innerHTML=`${p.id} · ${esc(p.name).toUpperCase()}<br>${modName(s.mod).toUpperCase()} · ${partName(s.part).toUpperCase()}<br>${s.d}`;
+  applyView();renderQuality(s);renderConf(p,s);renderWhy(p,s);renderDecision()}
+function renderQuality(s){const q=s.q;const col=v=>v==='Good'||v==='Acceptable'?'var(--p3)':v==='Fair'?'var(--p2)':'var(--p1)';const pct=Math.min(100,q.lapVar/300*100);
+  let h=`<table class="ptable"><tr><td>Sharpness (Laplacian variance)</td><td><b style="color:${col(q.sharp)}">${q.sharp}</b> <span class="dim mono">${q.lapVar.toFixed(0)}</span></td></tr>
+  <tr><td>Exposure (mean brightness)</td><td><b style="color:${col(q.expo)}">${q.expo}</b> <span class="dim mono">${q.mean.toFixed(0)}/255</span></td></tr>
+  <tr><td>Contrast (std. deviation)</td><td><b style="color:${col(q.contr)}">${q.contr}</b> <span class="dim mono">${q.std.toFixed(0)}</span></td></tr>
+  <tr><td>Image type check</td><td>${q.gray?'Grayscale, consistent with a medical scan':'<span style="color:var(--p2)">Colour image: may not be a medical scan</span>'}</td></tr>
+  <tr><td>Overall image quality</td><td><b style="color:${col(q.overall)}">${q.overall}</b></td></tr></table>
+  <div class="bar" style="grid-template-columns:50px 1fr 44px;margin-top:8px"><span class="dim" style="font-size:12px">Blurry</span><div class="track"><div class="fill" style="width:${pct}%;background:linear-gradient(90deg,var(--p1),var(--p2),var(--p3))"></div></div><span class="dim" style="font-size:12px">Sharp</span></div>`;
+  if(q.overall==='Poor')h+=`<div class="warn">⚠️ <div><b>Analysis confidence may be affected by image quality.</b> Please upload a clearer image.</div></div>`;
+  else if(q.overall==='Fair')h+=`<div class="warn">⚠️ <div>Image quality is fair. Read the results with extra caution.</div></div>`;
+  $('#qualBody').innerHTML=h}
+function gaugeSVG(v){const a=Math.PI*(1-v/100);const x=75+60*Math.cos(a),y=80-60*Math.sin(a);const col=v>=80?'var(--p1)':v>=55?'var(--p2)':'var(--p3)';
+  return`<svg viewBox="0 0 150 92"><path d="M15 80 A60 60 0 0 1 135 80" stroke="#e2e8f0" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <path d="M15 80 A60 60 0 0 1 ${x.toFixed(1)} ${y.toFixed(1)}" stroke="${col}" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <text x="75" y="76" text-anchor="middle" fill="#0f172a" font-family="Space Grotesk, sans-serif" font-size="24" font-weight="600">${v}%</text></svg>`}
+function reliability(s){if(s.conf==null)return'Not analysed: manual review';if(s.q.overall==='Poor')return'Low: repeat image advised';return'Requires verification'}
+function renderConf(p,s){
+  if(s.conf==null){$('#confBody').innerHTML=`<div class="info">ℹ️ <div>No AI finding for this image. ${esc(s.finding)}. The case is routed to manual review.</div></div>
+   <table class="ptable" style="margin-top:10px"><tr><td>Priority</td><td>${prPill(p.priority)}</td></tr><tr><td>Review status</td><td>${p.status}</td></tr></table>`;return}
+  const isLatest=s===last(p);
+  $('#confBody').innerHTML=`<div class="gauge">${gaugeSVG(s.conf)}<div style="font-size:12.5px" class="muted">Model confidence is how strongly the output matches a trained pattern. <b style="color:var(--text)">It is not diagnostic accuracy.</b></div></div>
+  <table class="ptable" style="margin-top:6px"><tr><td>Body part / image</td><td>${partName(s.part)} · ${modName(s.mod)}</td></tr><tr><td>Potential finding</td><td><b>${esc(s.finding)}</b></td></tr><tr><td>Model confidence</td><td>${s.conf}%</td></tr><tr><td>Image quality</td><td>${s.q.overall}</td></tr>
+  <tr><td>Analysis reliability</td><td>${reliability(s)}</td></tr><tr><td>${isLatest?'Suggested priority':'Patient priority (latest scan)'}</td><td>${prPill(p.priority)}</td></tr><tr><td>Review status</td><td>${p.status}${p.decision?' · '+p.decision:''}</td></tr></table>`}
+function renderWhy(p,s){const q=s.q;const L=[];
+  if(s.conf==null){L.push(esc(s.finding)+'.');L.push(`Image quality was evaluated: ${q.overall.toLowerCase()} (sharpness score ${q.lapVar.toFixed(0)}).`);L.push('Routed to a clinician for manual review.')}
+  else if(!s.hot.length){L.push('No region scored above the flagging threshold.');L.push(`Image quality was evaluated: ${q.overall.toLowerCase()} (sharpness score ${q.lapVar.toFixed(0)}).`);L.push(q.overall==='Poor'?'A repeat image is advised before relying on this result.':'Routine review is suggested. A doctor should still confirm.')}
+  else{s.hot.forEach(h=>L.push(`A region in the <b>${locWords(h)}</b> of the ${partName(s.part).split(' /')[0].toLowerCase()} image is denser (brighter) than the tissue around it.`));
+    L.push(`Image quality was evaluated: <b>${q.overall.toLowerCase()}</b> (sharpness ${q.lapVar.toFixed(0)}, contrast ${q.std.toFixed(0)}).`);
+    L.push(s.img?'For uploads, regions come from a brightness-anomaly heuristic, not a trained model.':'The prepared demo output matches the pattern: <i>'+esc(s.finding.split(',')[0].toLowerCase())+'</i>.');
+    if(p.scans.length>1)L.push('Earlier scans exist. Open <a data-go="compare" role="button" tabindex="0">Compare</a> to see how it has changed.');
+    L.push('Additional clinical correlation is recommended.')}
+  $('#whyList').innerHTML=L.map(l=>`<li>${l}</li>`).join('')+`<div class="dim" style="font-size:11.5px;margin-top:8px"><span class="lab">illustrative</span> Explanations come from this prototype's outputs, not a validated interpretability method.</div>`}
+function renderDecision(){const p=cur();
+  $('#decBody').innerHTML=`<div class="row" style="margin-bottom:10px">
+   <button class="btn green ${p.decision==='Accepted'?'on':''}" data-dec="Accepted">✓ Accept finding</button>
+   <button class="btn red ${p.decision==='Rejected'?'on':''}" data-dec="Rejected">✕ Reject</button>
+   <button class="btn amber ${p.decision==='Additional exam requested'?'on':''}" data-dec="Additional exam requested">＋ Request more exams</button></div>
+   <textarea id="decCmt" placeholder="Doctor's comments…">${esc(p.comments)}</textarea>
+   <div class="row" style="margin-top:10px;justify-content:space-between"><span class="dim" style="font-size:12px">Current: ${p.decision?'<b style="color:var(--text)">'+p.decision+'</b>':'no decision yet'}</span>
+   <div class="row"><a class="btn sm" data-go="compare" role="button" tabindex="0">Compare</a><a class="btn sm" data-go="twin" role="button" tabindex="0">3D twin</a><button class="btn sm pri" id="toReport">Generate report</button></div></div>`;
+  $$('#decBody [data-dec]').forEach(b=>b.onclick=()=>{if(!last(p)){toast('Upload a scan first');return}p.decision=b.dataset.dec;p.comments=$('#decCmt').value;
+    p.status=p.decision==='Additional exam requested'?'In review':'Completed';addLog(`${p.id}: doctor ${p.decision.toLowerCase()}${p.comments?' ("'+p.comments.slice(0,40)+'")':''}`);
+    toast(`Decision saved for ${p.id}: ${p.decision}`);const s=curScan();if(s)renderConf(p,s);renderDecision()});
+  $('#decCmt').oninput=e=>p.comments=e.target.value;
+  $('#toReport').onclick=()=>go('reports')}
+/* upload on analyze page */
+const drop=$('#drop');drop.onclick=()=>$('#file').click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')};drop.ondragleave=()=>drop.classList.remove('over');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');const f=e.dataTransfer.files[0];if(f)handleFile(f)};
+$('#file').onchange=e=>{const f=e.target.files[0];if(f)handleFile(f);e.target.value=''};
+function handleFile(f){if(!f.type.startsWith('image/')){toast('Please upload an image file (PNG or JPG).');return}uploadScan(cur(),f,$('#upPart').value||'chest',$('#upMod').value||'xray')}
+function runAnalysisAnim(p,s){viewScanId=s.id;loadAnalyze();const v=$('#viewer');v.classList.add('scanning');view.heat=false;applyView();
+  ctx2($('#cvHeat')).clearRect(0,0,512,512);
+  $('#confBody').innerHTML=`<div class="steps" id="stp"><div>• Checking image quality and sharpness…</div><div>• Checking image type…</div><div>• Looking for regions of abnormal density…</div><div>• Assigning review priority…</div></div>`;
+  $('#whyList').innerHTML='';$('#qualBody').innerHTML='<span class="dim">Measuring…</span>';
+  const st=$$('#stp div');let i=0;const tick=setInterval(()=>{if(i>0&&st[i-1])st[i-1].className='ok';if(i<st.length){st[i].className='run';i++;return}clearInterval(tick);
+    v.classList.remove('scanning');analyseUpload(p,s);s.thumb=null;view.heat=!!s.hot.length;loadAnalyze();
+    toast(`${p.id}: scan analysed, ${p.priority==='P1'?'Priority 1':p.priority==='P2'?'Priority 2':'Priority 3'}`);addLog(`${p.id}: analysed (${partName(s.part)}), ${p.priority}, quality ${s.q.overall}`)},450)}
+
+/* ============ COMPARE ============ */
+let cmpMode='slider',cmpPos=.5,cmpDiffOn=false,cmpPick=null;
+function renderCompare(){const p=cur();const n=p.scans.length;
+  const has=n>=2;$('#cmpEmpty').style.display=has?'none':'flex';$('#cmpBox').style.visibility=has?'visible':'hidden';
+  const opts=p.scans.map((s,i)=>`<option value="${i}">${s.d} · ${modName(s.mod)} · ${partName(s.part).split(' /')[0]}</option>`).join('');
+  $('#cmpA').innerHTML=opts;$('#cmpB').innerHTML=opts;
+  if(!cmpPick||cmpPick.p!==p.id)cmpPick={p:p.id,a:Math.max(0,n-2),b:n-1};$('#cmpA').value=cmpPick.a;$('#cmpB').value=cmpPick.b;
+  $('#cmpA').style.display=$('#cmpB').style.display=has?'':'none';
+  const A=p.scans[cmpPick.a],B=p.scans[cmpPick.b];
+  $('#cmpTl').innerHTML=p.scans.map((e,i)=>`<div class="ev ${i===n-1?'cur':''}"><b>${modName(e.mod)} · ${partName(e.part)}</b> <span class="dim mono" style="font-size:12px">${e.d}</span><div class="muted" style="font-size:13px">${esc(e.finding||'')}${e.note?' · '+esc(e.note):''}</div></div>`).join('')||'<span class="dim">No scans yet.</span>';
+  if(!has){$('#sbs').style.display='none';$('#cmpSummary').innerHTML=`<span class="muted">${esc(p.name)} has ${n} scan${n===1?'':'s'}. Two are needed to compare.</span>`;return}
+  drawScan($('#cmpPrev'),A);drawScan($('#cmpCur'),B);
+  ctx2($('#sbsPrev')).drawImage($('#cmpPrev'),0,0);ctx2($('#sbsCur')).drawImage($('#cmpCur'),0,0);
+  $('#tagPrev').textContent='A · '+A.d;$('#tagCur').textContent='B · '+B.d;$('#sbsL').textContent='A · '+A.d;$('#sbsR').textContent='B · '+B.d;
+  const a=ctx2($('#cmpPrev')).getImageData(0,0,512,512).data,b=ctx2($('#cmpCur')).getImageData(0,0,512,512).data;
+  const dc=ctx2($('#cmpDiffCv'));const out=dc.createImageData(512,512);let changed=0;
+  for(let i=0;i<a.length;i+=4){const df=b[i]-a[i];if(Math.abs(df)>22){changed++;out.data[i]=df>0?255:40;out.data[i+1]=df>0?60:150;out.data[i+2]=df>0?60:255;out.data[i+3]=140}}
+  dc.putImageData(out,0,0);if(cmpDiffOn)ctx2($('#sbsCur')).drawImage($('#cmpDiffCv'),0,0);
+  const pct=changed/(512*512)*100;const ra=A.hot[0]?.r||0,rb=B.hot[0]?.r||0;
+  const days=Math.round((new Date(B.d)-new Date(A.d))/864e5);const samePart=A.part===B.part;
+  $('#cmpSummary').innerHTML=`<table class="ptable"><tr><td>Patient</td><td><b>${p.id}</b> · ${esc(p.name)}</td></tr><tr><td>Interval</td><td>${days} days</td></tr>
+   <tr><td>Body part</td><td>${samePart?partName(B.part):'<span style="color:var(--p2)">Different parts: '+partName(A.part)+' vs '+partName(B.part)+'</span>'}</td></tr>
+   <tr><td>Pixels changed noticeably</td><td class="mono">${pct.toFixed(2)}%</td></tr>
+   <tr><td>Flagged region</td><td>${!ra&&rb?'<b style="color:var(--p1)">New since previous scan</b>':rb>ra*1.1?'<b style="color:var(--p2)">Appears larger</b>':rb&&rb<ra*.9?'<b style="color:var(--p3)">Appears smaller</b>':rb?'Similar size':'None flagged'}</td></tr>
+   <tr><td>Current priority</td><td>${prPill(p.priority)}</td></tr></table>
+   <div class="dim" style="font-size:11.5px;margin-top:8px">Change % is a raw pixel difference. Scans taken at different positions, zoom or exposure will show extra differences. Uploaded scans are not auto-aligned.</div>`;
+  setCmp()}
+function setCmp(){const sl=cmpMode==='slider';const p=cur();if(p.scans.length<2)return;$('#cmpBox').style.display=sl?'':'none';$('#sbs').style.display=sl?'none':'grid';
+  $('#cmpClip').style.clipPath=`inset(0 ${100-cmpPos*100}% 0 0)`;$('#cmpHandle').style.left=`calc(${cmpPos*100}% - 1px)`;
+  $('#cmpDiffCv').style.display=cmpDiffOn?'block':'none';$('#cmSlider').classList.toggle('on',sl);$('#cmSide').classList.toggle('on',!sl);$('#cmDiff').classList.toggle('on',cmpDiffOn)}
+(()=>{const box=$('#cmpBox');let d=false;const mv=e=>{const r=box.getBoundingClientRect();cmpPos=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));setCmp()};
+ box.addEventListener('pointerdown',e=>{d=true;box.setPointerCapture(e.pointerId);mv(e)});box.addEventListener('pointermove',e=>d&&mv(e));box.addEventListener('pointerup',()=>d=false)})();
+$('#cmSlider').onclick=()=>{cmpMode='slider';setCmp()};$('#cmSide').onclick=()=>{cmpMode='side';renderCompare()};$('#cmDiff').onclick=()=>{cmpDiffOn=!cmpDiffOn;renderCompare()};
+$('#cmpA').onchange=e=>{cmpPick.a=+e.target.value;renderCompare()};$('#cmpB').onchange=e=>{cmpPick.b=+e.target.value;renderCompare()};
+
+/* ============ 3D TWIN ============ */
+const T=(()=>{
+  let ok=typeof THREE!=='undefined',scene,cam,ren,main,ref,mode='ai',back=false,rotY=0,rotX=0,dist=7.6,sel=null,inited=false;const box=$('#threeBox');
+  const BONE=0xd6d0c0;
+  function mat(c,o={}){return new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.5,metalness:.05},o))}
+  function body(){const g=new THREE.Group();const organs=[];
+    const shellM=new THREE.MeshStandardMaterial({color:0x5eead4,transparent:true,opacity:.16,depthWrite:false,side:THREE.DoubleSide,roughness:.3,metalness:.1});
+    const wireM=new THREE.MeshBasicMaterial({color:0x0f766e,wireframe:true,transparent:true,opacity:.07});
+    const add=(geo,pos,sc,rot)=>{for(const m of[shellM,wireM]){const me=new THREE.Mesh(geo,m);me.position.set(...pos);if(sc)me.scale.set(...sc);if(rot)me.rotation.set(...rot);me.renderOrder=2;g.add(me)}};
+    const prof=[[0,1.48],[.24,1.5],[.3,1.62],[.28,1.85],[.25,2.05],[.28,2.4],[.34,2.75],[.33,2.9],[.2,3.0],[.09,3.04],[0,3.05]].map(p=>new THREE.Vector2(p[0],p[1]));
+    add(new THREE.LatheGeometry(prof,40),[0,0,0],[1,1,.62]);
+    add(new THREE.SphereGeometry(.26,32,24),[0,3.42,0],[.88,1.1,1]);
+    add(new THREE.CylinderGeometry(.08,.09,.25,16),[0,3.12,0]);
+    for(const s of[-1,1]){add(new THREE.CylinderGeometry(.075,.06,1.25,16),[s*.47,2.28,0],null,[0,0,s*.14]);
+      add(new THREE.SphereGeometry(.07,12,10),[s*.56,1.62,0]);
+      add(new THREE.CylinderGeometry(.11,.07,1.5,16),[s*.14,.77,0])}
+    const org=(key,geo,c,pos,sc,extra={})=>{const m=new THREE.Mesh(geo,mat(c));m.position.set(...pos);if(sc)m.scale.set(...sc);m.userData={key,base:c,...extra};g.add(m);organs.push(m);return m};
+    org('brain',new THREE.SphereGeometry(.24,32,24),0xf0a5b5,[0,3.47,0],[.86,.82,1.02]);
+    org('lungs',new THREE.SphereGeometry(.2,32,24),0xf58f8f,[-.17,2.5,.02],[.85,1.75,.85],{side:'right'});
+    org('lungs',new THREE.SphereGeometry(.2,32,24),0xf58f8f,[.17,2.5,.02],[.8,1.7,.85],{side:'left'});
+    org('heart',new THREE.SphereGeometry(.11,24,18),0xd12f45,[.06,2.36,.1],[1,1.15,.95]);
+    org('liver',new THREE.SphereGeometry(.2,24,18),0x9b4a3a,[-.1,2.06,.04],[1.25,.5,.75]);
+    org('stomach',new THREE.SphereGeometry(.1,20,16),0xe3a76f,[.14,2.02,.06],[1,.8,.8]);
+    org('kidneys',new THREE.SphereGeometry(.06,16,12),0xa2363f,[-.12,1.86,-.09],[.8,1.4,.8],{side:'right'});
+    org('kidneys',new THREE.SphereGeometry(.06,16,12),0xa2363f,[.12,1.88,-.09],[.8,1.4,.8],{side:'left'});
+    for(let i=0;i<18;i++)org('spine',new THREE.BoxGeometry(.06,.055,.06),BONE,[0,1.55+i*.082,-.15]);
+    for(let i=0;i<7;i++)for(const s of[-1,1]){const r=org('ribs',new THREE.TorusGeometry(.2-(Math.abs(i-2)*.008),.009,6,24,Math.PI*.9),BONE,[s*.02,2.78-i*.075,-.02],[1,1.1,.75]);
+      r.rotation.set(Math.PI/2+.25,0,s>0?-.25:Math.PI+.25)}
+    for(const s of[-1,1]){org('legs',new THREE.CylinderGeometry(.025,.025,1.4,8),BONE,[s*.14,.8,0],null,{side:s<0?'right':'left'});
+      org('arms',new THREE.CylinderGeometry(.02,.02,1.15,8),BONE,[s*.47,2.28,0],null,{side:s<0?'right':'left'}).rotation.z=s*.14}
+    org('pelvis',new THREE.TorusGeometry(.17,.03,8,24),BONE,[0,1.58,-.02],[1,.7,1]).rotation.x=Math.PI/2.4;
+    const mk=new THREE.Mesh(new THREE.SphereGeometry(.045,16,12),new THREE.MeshBasicMaterial({color:0xdc2626}));mk.visible=false;g.add(mk);
+    const halo=new THREE.Mesh(new THREE.RingGeometry(.06,.08,32),new THREE.MeshBasicMaterial({color:0xef4444,transparent:true,opacity:.85,side:THREE.DoubleSide}));halo.visible=false;g.add(halo);
+    const ring=new THREE.Mesh(new THREE.RingGeometry(.5,.56,64),new THREE.MeshBasicMaterial({color:0x0d9488,transparent:true,opacity:.45,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.01;g.add(ring);
+    return{g,organs,mk,halo}}
+  function init(){if(inited)return;inited=true;if(!ok){$('#noGl').style.display='grid';return}
+    try{ren=new THREE.WebGLRenderer({antialias:true,alpha:true})}catch(e){ok=false;$('#noGl').style.display='grid';return}
+    ren.setPixelRatio(Math.min(2,devicePixelRatio));box.prepend(ren.domElement);
+    scene=new THREE.Scene();cam=new THREE.PerspectiveCamera(35,1,.1,100);
+    scene.add(new THREE.HemisphereLight(0xffffff,0xb8c6d8,.95));const dl=new THREE.DirectionalLight(0xffffff,.7);dl.position.set(2,5,4);scene.add(dl);const dl2=new THREE.DirectionalLight(0x93c5fd,.35);dl2.position.set(-3,2,-4);scene.add(dl2);
+    main=body();ref=body();scene.add(main.g);scene.add(ref.g);
+    const grid=new THREE.GridHelper(8,24,0xb6c4d6,0xd5dee9);scene.add(grid);
+    const c=ren.domElement;let d=null,moved=false;
+    c.addEventListener('pointerdown',e=>{d={x:e.clientX,y:e.clientY,ry:rotY,rx:rotX};moved=false;c.setPointerCapture(e.pointerId)});
+    c.addEventListener('pointermove',e=>{if(!d)return;const dx=e.clientX-d.x,dy=e.clientY-d.y;if(Math.abs(dx)+Math.abs(dy)>4)moved=true;rotY=d.ry+dx*.01;rotX=Math.max(-.5,Math.min(.5,d.rx+dy*.005))});
+    c.addEventListener('pointerup',e=>{if(!moved)pick(e);d=null});
+    c.addEventListener('wheel',e=>{e.preventDefault();dist=Math.min(10,Math.max(1.6,dist+e.deltaY*.004))},{passive:false});
+    new ResizeObserver(size).observe(box);size();requestAnimationFrame(loop)}
+  function size(){if(!ren)return;const w=box.clientWidth,h=box.clientHeight;if(!w)return;ren.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix()}
+  function pick(e){const r=ren.domElement.getBoundingClientRect();const v=new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
+    const rc=new THREE.Raycaster();rc.setFromCamera(v,cam);const hits=rc.intersectObjects(main.organs,false);if(hits.length){sel=hits[0].object.userData.key;showOrgan(sel);style()}}
+  function flag(){const p=twinP();const s=last(p);if(!s||s.conf==null||!s.hot.length)return null;const key=(BODY[s.part]||BODY.other)[1];const h=s.hot[0];
+    const side=h.x<.42?'right':h.x>.58?'left':null;return{key,side,h,s}}
+  function hitTest(m,f){if(!f)return false;const k=m.userData.key;const want=f.key==='skeleton'?['spine','ribs','arms','legs','pelvis']:[f.key];if(!want.includes(k))return false;
+    if((k==='lungs'||k==='arms'||k==='legs'||k==='kidneys')&&f.side&&m.userData.side)return m.userData.side===f.side;return true}
+  function markerPos(f){if(!f)return null;const {key,side,h}=f;const sx=side==='right'?-1:side==='left'?1:0;
+    switch(key){case'lungs':return[sx?sx*.2:-.2,2.85-(h.y-.15)*1.1,.2];case'heart':return[.06,2.36,.22];case'brain':return[(h.x-.5)*.3,3.6-(h.y)*.3,.24];
+      case'liver':return[-.1+(h.x-.5)*.4,2.06,.2];case'kidneys':return[(sx||1)*.12,1.87,.16];case'spine':return[0,3.0-h.y*1.4,.12];case'pelvis':return[(h.x-.5)*.3,1.58,.16];
+      case'arms':return[(sx||-1)*(.42+h.y*.12),2.8-h.y*1.0,.08];case'legs':return[(sx||-1)*.14,1.45-h.y*1.3,.14];default:return[0,2.2,.25]}}
+  function style(){const f=flag();for(const b of[main,ref]){const isRef=b===ref;b.organs.forEach(m=>{const k=m.userData.key;const mm=m.material;
+      mm.color.setHex(m.userData.base);mm.emissive.setHex(0);mm.emissiveIntensity=1;mm.transparent=true;mm.opacity=['spine','ribs','arms','legs','pelvis'].includes(k)?.75:1;m.userData.pulse=false;
+      const hit=hitTest(m,f);
+      if(!isRef&&mode!=='normal'&&f){if(hit){if(['spine','ribs','arms','legs','pelvis'].includes(k))mm.color.setHex(0xef4444);mm.emissive.setHex(0xff2020);mm.emissiveIntensity=.55;mm.opacity=1;m.userData.pulse=true}else{mm.opacity*=.35}}
+      if(!isRef&&sel===k){mm.emissive.setHex(mode!=='normal'&&hit?0xff3030:0x0d9488);mm.emissiveIntensity=.55;mm.opacity=1}})}
+    const pos=markerPos(f);main.mk.visible=main.halo.visible=!!pos&&mode!=='normal';if(pos){main.mk.position.set(...pos);main.halo.position.set(pos[0],pos[1],pos[2]+.01)}
+    ref.mk.visible=ref.halo.visible=false}
+  function layout(){const cmp=mode==='compare';ref.g.visible=cmp;main.g.position.x=cmp?.75:0;ref.g.position.x=-.75;
+    $('#lblA').style.display=$('#lblB').style.display=cmp?'block':'none';if(cmp&&dist<8.2)dist=8.2;style()}
+  function loop(t){requestAnimationFrame(loop);if(!box.offsetParent)return;const ty=rotY+(back?Math.PI:0);
+    for(const b of[main,ref]){b.g.rotation.y+=(ty-b.g.rotation.y)*.12;b.g.rotation.x+=(rotX-b.g.rotation.x)*.12}
+    const ly=1.75+Math.max(0,7.6-dist)*.11;cam.position.set(0,ly+.1,dist);cam.lookAt(0,ly,0);
+    const s=1+.35*Math.sin(t/250);main.halo.scale.set(s,s,s);main.halo.lookAt(cam.position);
+    main.organs.forEach(m=>{if(m.userData.pulse)m.material.emissiveIntensity=.3+.35*(1+Math.sin(t/300))/2});
+    ren.render(scene,cam)}
+  function setMode(m){mode=m;$$('#threeBox [data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===m));if(ok&&inited)layout()}
+  $$('#threeBox [data-m]').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+  $('#fbBtn').onclick=()=>{back=!back;$('#fbBtn').textContent=back?'Show front':'Show back'};
+  $('#zIn').onclick=()=>dist=Math.max(1.6,dist-.6);$('#zOut').onclick=()=>dist=Math.min(10,dist+.6);$('#zRst').onclick=()=>{rotY=0;rotX=0;back=false;dist=mode==='compare'?8.2:7.6;$('#fbBtn').textContent='Show back'};
+  function onShow(){init();renderTwinSide();if(ok&&ren){size();sel=null;layout()}}
+  function refresh(){sel=null;renderTwinSide();if(ok&&inited&&ren)layout()}
+  return{onShow,refresh,flag:()=>ok&&inited?flag():null}
+})();
+function twinP(){return cur()}
+function renderTwinSide(){const p=twinP();const s=last(p);const f=s&&s.conf!=null&&s.hot.length;
+  $('#twinHead').innerHTML=`<table class="ptable"><tr><td>Patient</td><td><b>${esc(p.name)}</b> <span class="mono dim">${p.id}</span></td></tr><tr><td>Age / sex</td><td>${p.age} / ${p.sex||'—'}</td></tr>
+   <tr><td>Latest scan</td><td>${s?modName(s.mod)+' · '+partName(s.part):'None'}</td></tr><tr><td>Flagged region</td><td>${f?'<b style="color:var(--p1)">'+partName(s.part)+' ('+locWords(s.hot[0])+')</b>':'None'}</td></tr>
+   <tr><td>Priority</td><td>${prPill(p.priority)}</td></tr><tr><td>Doctor's assessment</td><td>${p.decision||'<span class="dim">Pending</span>'}${p.comments?'<div class="dim" style="font-size:12px">"'+esc(p.comments)+'"</div>':''}</td></tr></table>`;
+  $('#twinTl').innerHTML=p.scans.map((e,i)=>`<div class="ev ${i===p.scans.length-1?'cur':''}"><b>${modName(e.mod)} · ${partName(e.part)}</b> <span class="dim mono" style="font-size:12px">${e.d}</span><div class="muted" style="font-size:13px">${esc(e.finding||'')}${e.note?' · '+esc(e.note):''}</div></div>`).join('')||'<span class="dim">No scans yet.</span>';
+  $('#orgName').textContent='click the body';$('#orgBody').innerHTML='Click an organ or bone on the 3D body to see findings, confidence and the recommended next step.'}
+function showOrgan(k){const p=twinP();const s=last(p);$('#orgName').textContent=ORG[k]||k;
+  const fk=s?(BODY[s.part]||BODY.other)[1]:null;const isF=s&&s.conf!=null&&s.hot.length&&(fk===k||(fk==='skeleton'&&['spine','ribs','arms','legs','pelvis'].includes(k)));
+  $('#orgBody').innerHTML=isF?`<table class="ptable"><tr><td>Potential finding</td><td><b>${esc(s.finding)}</b></td></tr><tr><td>Source image</td><td>${modName(s.mod)} · ${partName(s.part)}, ${s.d}</td></tr>
+   <tr><td>Model confidence</td><td>${s.conf}% <span class="dim">(not diagnostic accuracy)</span></td></tr><tr><td>Image quality</td><td>${scanQuality(s).overall}</td></tr>
+   <tr><td>Recommended next step</td><td>${p.priority==='P1'?'Urgent professional review':p.priority==='P2'?'Prompt review':'Routine review'}; clinical correlation advised</td></tr></table>
+   <div class="row" style="margin-top:10px"><button class="btn sm" data-go="analyze">Open scan</button><button class="btn sm" data-go="reports">Report</button></div>`
+   :`<span class="muted">No region flagged for the ${(ORG[k]||k).toLowerCase()} in ${esc(p.name)}'s latest scan.</span>`;
+  viewScanId=null}
+
+/* ============ REPORT ============ */
+function reportData(){const p=cur();const s=last(p);if(s)scanQuality(s);
+  const obs=!s?['No scan has been uploaded for this patient yet.']:s.conf==null?['No AI finding was produced for this image ('+s.finding.toLowerCase()+').','The case has been routed for manual review.']
+   :s.hot.length?[`A potentially abnormal region has been flagged (${locWords(s.hot[0])}).`,'Image quality: '+s.q.overall.toLowerCase()+'.','Further clinical assessment is recommended.']
+   :['No region scored above the flagging threshold.','Image quality: '+s.q.overall.toLowerCase()+'.','Routine review is suggested.'];
+  return{p,s,obs,date:new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})}}
+function reportImgs(s){const a=document.createElement('canvas');a.width=a.height=512;drawScan(a,s);const b=document.createElement('canvas');b.width=b.height=512;const bc=b.getContext('2d');bc.drawImage(a,0,0);
+  const h=document.createElement('canvas');h.width=h.height=512;drawHeat(h,s.hot);bc.globalAlpha=.75;bc.drawImage(h,0,0);return[a.toDataURL('image/jpeg',.85),b.toDataURL('image/jpeg',.85)]}
+const prLabel=p=>({P1:'High: urgent professional review',P2:'Medium: prompt review',P3:'Routine review'}[p]);
+function renderReport(){const{p,s,obs,date}=reportData();$('#repNotes').value=p.comments||'';const imgs=s?reportImgs(s):null;
+  $('#reportBox').innerHTML=`<div class="rh"><div><h4>MEDI-VISION · Analysis Report</h4><div style="color:#64748b;font-size:12px">Generated ${date}</div></div><div style="text-align:right;font-size:12px;color:#64748b">PROTOTYPE<br>Not for clinical use</div></div>
+   <table><tr><td>Patient ID</td><td><b>${p.id}</b></td></tr><tr><td>Patient name</td><td>${esc(p.name)}</td></tr><tr><td>Age / sex</td><td>${p.age} / ${p.sex||'—'}</td></tr>
+   <tr><td>Body part</td><td>${s?partName(s.part):'—'}</td></tr><tr><td>Image type</td><td>${s?modName(s.mod)+' ('+s.d+')':'—'}</td></tr>
+   <tr><td>Potential finding</td><td>${s?esc(s.finding):'—'}</td></tr><tr><td>Model confidence</td><td>${s&&s.conf!=null?s.conf+'%':'n/a'}</td></tr><tr><td>Image quality</td><td>${s?s.q.overall:'—'}</td></tr><tr><td>Priority</td><td>${prLabel(p.priority)}</td></tr><tr><td>Doctor's decision</td><td>${p.decision||'Pending'}</td></tr></table>
+   ${imgs?`<div class="imgs"><img src="${imgs[0]}" alt="Original scan"><img src="${imgs[1]}" alt="Scan with heatmap"></div>`:''}
+   <b>Observations</b><ul>${obs.map(o=>`<li>${esc(o)}</li>`).join('')}</ul>
+   <b>Doctor's notes</b><div id="repNotesOut" style="min-height:40px;border-bottom:1px dashed #94a3b8;padding:6px 0;white-space:pre-wrap">${esc(p.comments)||'__________'}</div>
+   <div class="disc">This report is produced by a decision-support prototype. Model confidence is not diagnostic accuracy. All findings must be confirmed by a qualified healthcare professional.</div>`;
+  const inFrame=(()=>{try{return window.self!==window.top}catch(e){return true}})();
+  $('#dlNote').textContent=inFrame?'If the download doesn\'t start, this preview is blocking downloads. Open the HTML file directly in your browser, or use "Copy text".':''}
+$('#repNotes').oninput=e=>{const p=cur();p.comments=e.target.value;const o=$('#repNotesOut');if(o)o.textContent=p.comments||'__________'};
+function reportText(){const{p,s,obs,date}=reportData();return`MEDI-VISION – Analysis Report (PROTOTYPE)\nGenerated: ${date}\n\nPatient ID: ${p.id}\nPatient: ${p.name}\nBody part: ${s?partName(s.part):'—'}\nImage Type: ${s?modName(s.mod):'—'}\nPotential Finding: ${s?s.finding:'—'}\nModel confidence: ${s&&s.conf!=null?s.conf+'%':'n/a'}\nImage Quality: ${s?s.q.overall:'—'}\nPriority: ${prLabel(p.priority)}\nDoctor's decision: ${p.decision||'Pending'}\n\nObservations:\n${obs.map(o=>'- '+o).join('\n')}\n\nDoctor's Notes: ${p.comments||'__________'}\n\nDecision-support prototype. Not a diagnosis.`}
+$('#repCopy').onclick=async()=>{try{await navigator.clipboard.writeText(reportText());toast('Report copied to clipboard')}catch(e){toast('Copy was blocked. Select the report text manually.')}};
+$('#repPdf').onclick=()=>{if(!window.jspdf){toast('PDF library not loaded (offline?). Use Copy text.');return}
+  const{p,s,obs,date}=reportData();const doc=new window.jspdf.jsPDF({unit:'pt',format:'a4'});
+  doc.setFillColor(13,148,136);doc.rect(0,0,595,70,'F');doc.setTextColor(255);doc.setFontSize(20);doc.setFont('helvetica','bold');doc.text('MEDI-VISION - Analysis Report',40,42);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('Generated '+date+'  |  PROTOTYPE - not for clinical use',40,58);doc.setTextColor(20);
+  let y=100;const row=(k,v)=>{doc.setFont('helvetica','bold');doc.text(k,40,y);doc.setFont('helvetica','normal');const l=doc.splitTextToSize(String(v),330);doc.text(l,200,y);y+=16*l.length+4};doc.setFontSize(11);
+  [['Patient ID',p.id],['Patient',p.name],['Age / sex',p.age+' / '+(p.sex||'-')],['Body part',s?partName(s.part):'-'],['Image type',s?modName(s.mod)+' ('+s.d+')':'-'],['Potential finding',s?s.finding:'-'],['Model confidence',s&&s.conf!=null?s.conf+'%':'n/a'],['Image quality',s?s.q.overall:'-'],['Priority',prLabel(p.priority)],["Doctor's decision",p.decision||'Pending']].forEach(r=>row(...r));
+  if(s){const[i1,i2]=reportImgs(s);doc.addImage(i1,'JPEG',40,y+4,200,200);doc.addImage(i2,'JPEG',260,y+4,200,200);y+=226}
+  doc.setFont('helvetica','bold');doc.text('Observations',40,y);y+=18;doc.setFont('helvetica','normal');obs.forEach(o=>{const l=doc.splitTextToSize('• '+o,500);doc.text(l,50,y);y+=15*l.length});y+=8;
+  doc.setFont('helvetica','bold');doc.text("Doctor's notes",40,y);y+=18;doc.setFont('helvetica','normal');doc.text(doc.splitTextToSize(p.comments||'__________',500),40,y);
+  doc.setFontSize(8.5);doc.setTextColor(110);doc.text('Decision-support prototype. Model confidence is not diagnostic accuracy. Findings must be confirmed by a qualified clinician.',40,810);
+  doc.save(`MEDI-VISION_${p.id}_report.pdf`);toast('PDF report generated');addLog(`${p.id}: report generated`)};
+
+/* ============ BILLING ============ */
+function billCalc(id){const b=BILL[id];const sub=b.items.reduce((s,i)=>s+i[2],0);const pharm=b.items.filter(i=>i[0]==='Pharmacy').reduce((s,i)=>s+i[2],0);
+  const tax=pharm*GST/100;const disc=sub*(b.disc||0)/100;const ins=b.ins&&b.ins.st==='Approved'?Math.min(b.ins.amt,sub+tax-disc):0;const paid=b.pays.filter(x=>x[4]).reduce((s,x)=>s+x[3],0);
+  const total=sub+tax-disc;let bal=Math.max(0,total-ins-paid);if(bal<1)bal=0;const over=bal>0&&b.due<iso(today);
+  const st=total===0?['unpaid','No charges']:bal<=0?['paid','Paid']:over?['over','Overdue']:paid+ins>0?['part','Partially paid']:['unpaid','Unpaid'];return{sub,tax,disc,ins,paid,total,bal,over,st,b}}
+function renderBilling(){const ids=Object.keys(BILL);const all=ids.map(billCalc);
+  const rev=all.reduce((s,c)=>s+c.total,0),col=all.reduce((s,c)=>s+c.paid+c.ins,0),out=all.reduce((s,c)=>s+c.bal,0),ov=ids.filter(id=>billCalc(id).over);
+  $('#finKpis').innerHTML=[['Total billed',fmt(rev),ids.length+' patient accounts','var(--blue)'],['Collected',fmt(col),'payments + approved insurance','var(--p3)'],['Outstanding',fmt(out),'balance still due','var(--p2)'],['Overdue accounts',ov.length,'past due date','var(--p1)']]
+   .map(k=>`<div class="card kpi" style="--k:${k[3]}"><div class="lbl">${k[0]}</div><div class="num" style="font-size:26px">${k[1]}</div><div class="hint">${k[2]}</div></div>`).join('');
+  $('#overdueBox').innerHTML=ov.map(id=>{const c=billCalc(id);return`<div class="alert">🔔 <span><b>${id}</b> (${esc(findP(id).name)}) is overdue: ${fmt(c.bal)} outstanding since ${c.b.due}.</span><button class="btn sm" style="margin-left:auto" data-billview="${id}">View</button></div>`}).join('');
+  $$('[data-billview]').forEach(b=>b.onclick=()=>{setCur(b.dataset.billview);renderBilling()});
+  const dept={Radiology:0,Laboratory:0,Pharmacy:0};ids.forEach(id=>BILL[id].items.forEach(i=>dept[i[0]]+=i[2]));const mx=Math.max(...Object.values(dept),1);
+  $('#deptBars').innerHTML=Object.entries(dept).map(([k,v],i)=>`<div class="bar" style="grid-template-columns:90px 1fr 80px"><span>${k}</span><div class="track"><div class="fill" style="width:${v/mx*100}%;background:${['var(--accent)','var(--blue)','#8b5cf6'][i]}"></div></div><b class="mono" style="font-size:12px;text-align:right">${fmt(v)}</b></div>`).join('');
+  const id=cur().id;const c=billCalc(id);const p=cur();
+  $('#billStatus').innerHTML=`<span class="pay-st ${c.st[0]}">${c.st[1]}</span>`;
+  $('#billHead').innerHTML=`${esc(p.name)} · Invoice <span class="mono">INV-${id.slice(3)}</span> · Due ${c.b.due}${c.b.ins?` · Insurance: ${c.b.ins.prov} (${c.b.ins.st})`:''}`;
+  $('#billItems tbody').innerHTML=c.b.items.map(i=>`<tr><td>${i[0]}</td><td>${esc(i[1])}</td><td class="mono">${fmt(i[2])}</td></tr>`).join('')||'<tr><td colspan="3" class="dim">No charges yet.</td></tr>';
+  $('#billSum').innerHTML=`<span class="muted">Subtotal</span><span class="mono">${fmt(c.sub)}</span><span class="muted">GST on pharmacy (${GST}%)</span><span class="mono">+ ${fmt(c.tax)}</span>
+   <span class="muted">Discount (${c.b.disc||0}%)</span><span class="mono">− ${fmt(c.disc)}</span><span class="muted">Invoice total</span><span class="mono"><b>${fmt(c.total)}</b></span>
+   <span class="muted">Insurance ${c.b.ins?'('+c.b.ins.st.toLowerCase()+')':''}</span><span class="mono">− ${fmt(c.ins)}</span><span class="muted">Paid (verified)</span><span class="mono">− ${fmt(c.paid)}</span>
+   <span style="font-weight:600">Balance due</span><span class="tot mono">${fmt(c.bal)}</span>`;
+  $('#discIn').value=c.b.disc||'';
+  $('#payTbl tbody').innerHTML=c.b.pays.map((x,i)=>`<tr><td class="mono">${x[0]}</td><td>${x[1]}</td><td class="mono">${esc(x[2])}</td><td class="mono">${fmt(x[3])}</td>
+   <td>${x[4]?'<span style="color:var(--p3)">✓ Verified</span>':`<button class="btn sm" data-ver="${i}">Verify</button>`}</td><td><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm" data-rc="${i}">Receipt</button>${x[4]&&x[3]>0&&!x.refunded?`<button class="btn sm" data-rf="${i}">Refund</button>`:''}</div></td></tr>`).join('')||'<tr><td colspan="6" class="dim">No payments yet.</td></tr>';
+  $$('#payTbl [data-ver]').forEach(b=>b.onclick=()=>{const x=c.b.pays[b.dataset.ver];x[4]=true;addLog(`${id}: payment ${x[2]} (${fmt(x[3])}) verified`,'fin');renderBilling()});
+  $$('#payTbl [data-rf]').forEach(b=>b.onclick=()=>{const x=c.b.pays[b.dataset.rf];x.refunded=true;c.b.pays.push([iso(today),x[1],'RF-'+x[2],-x[3],true]);addLog(`${id}: refund of ${fmt(x[3])} issued against ${x[2]}`,'fin');toast('Refund recorded');renderBilling()});
+  $$('#payTbl [data-rc]').forEach(b=>b.onclick=()=>receipt(id,c.b.pays[b.dataset.rc]))}
+function receipt(id,x){const p=findP(id);const c=billCalc(id);
+  modal(`<div class="report" style="box-shadow:none"><div class="rh"><div><h4>Payment receipt</h4><div style="font-size:12px;color:#64748b">MEDI-VISION · PROTOTYPE RECEIPT</div></div><div style="text-align:right;font-size:12px" class="mono">RCPT-${esc(x[2])}</div></div>
+   <table><tr><td>Patient</td><td>${esc(p.name)} (${id})</td></tr><tr><td>Date</td><td>${x[0]}</td></tr><tr><td>Method</td><td>${x[1]}</td></tr><tr><td>Reference</td><td>${esc(x[2])}</td></tr>
+   <tr><td>Amount</td><td><b>${fmt(x[3])}</b></td></tr><tr><td>Status</td><td>${x[4]?'Verified':'Awaiting verification'}</td></tr><tr><td>Balance after payments</td><td>${fmt(c.bal)}</td></tr></table>
+   <div class="disc">Sample receipt from a prototype. Not a valid financial document.</div></div><div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn" data-close>Close</button></div>`)}
+$('#gstIn').onchange=e=>{GST=Math.max(0,Math.min(28,+e.target.value||0));addLog(`Tax setting changed: GST on pharmacy ${GST}%`,'fin');renderBilling()};
+$('#discIn').onchange=e=>{const id=cur().id;BILL[id].disc=Math.max(0,Math.min(100,+e.target.value||0));addLog(`${id}: discount set to ${BILL[id].disc}%`,'fin');renderBilling()};
+$('#payBtn').onclick=()=>{const id=cur().id;const a=+$('#payAmt').value;if(!a||a<=0){toast('Enter a payment amount');return}
+  const m=$('#payMethod').value;const ref=$('#payRef').value.trim()||(m.slice(0,3).toUpperCase()+'-'+Math.floor(10000+Math.random()*89999));
+  BILL[id].pays.push([iso(today),m,ref,a,m==='Cash']);addLog(`${id}: payment ${fmt(a)} via ${m} recorded${m==='Cash'?' (verified)':' (awaiting verification)'}`,'fin');
+  $('#payAmt').value='';$('#payRef').value='';toast('Payment recorded');renderBilling()};
+
+/* ============ HELP ============ */
+$('#vids').innerHTML=TUTORIALS.map((v,i)=>`<div class="card vid"><a ${v.url?`href="${v.url}" target="_blank" rel="noopener"`:''} class="thumb" style="text-decoration:none"><div class="play"></div><span class="dur">${v.dur}</span></a>
+  <div><b>${i+1}. ${v.title}</b><div class="muted" style="font-size:13px">${v.desc}</div>${v.url?`<a href="${v.url}" target="_blank" rel="noopener" style="font-size:12.5px">Watch on YouTube ↗</a>`:'<span class="dim" style="font-size:12px">Video link coming soon</span>'}</div></div>`).join('');
+
+/* ============ VOICE / COMMANDS ============ */
+function runCmd(raw){const s=raw.toLowerCase().trim();if(!s)return;const m=s.replace(/[^a-z0-9 ]/g,' ').match(/(\d{4})/);
+  if(m&&/open|show|patient|load/.test(s)){openPatient('MV-'+m[1]);toast('Opening patient MV-'+m[1]);return}
+  if(/new patient|add patient|register/.test(s)){go('dashboard');openUploadModal(null);return}
+  if(/upload/.test(s)){openUploadModal(cur().id);return}
+  if(/high|urgent|priority 1|p1/.test(s)){setFilter('P1');go('dashboard');toast('Showing high-priority patients');return}
+  if(/compar|previous|before/.test(s)){cmpPick=null;go('compare');toast('Comparing previous and current scans');return}
+  if(/report/.test(s)){go('reports');toast('Report generated for '+cur().id);return}
+  if(/3d|twin|body/.test(s)){go('twin');return}
+  if(/bill|payment|invoice/.test(s)){go('billing');return}
+  if(/heat/.test(s)){go('analyze');view.heat=true;applyView();return}
+  if(/original/.test(s)){go('analyze');view.heat=false;applyView();return}
+  if(/analy[sz]e|scan/.test(s)){go('analyze');return}
+  if(/help|tutorial|video/.test(s)){go('help');return}
+  if(/dash|home|all patient|queue/.test(s)){setFilter('all');go('dashboard');return}
+  toast(`Didn't recognise "${raw}". Try "show high-priority patients".`)}
+$('#cmdIn').addEventListener('keydown',e=>{if(e.key==='Enter'){runCmd(e.target.value);e.target.value=''}});
+(()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;const b=$('#micBtn');let rec=null,on=false;
+  b.onclick=()=>{if(!SR){toast('Voice needs Chrome or Edge. You can type the command instead.');$('#cmdIn').focus();return}
+    if(on){rec&&rec.stop();return}
+    try{rec=new SR();rec.lang='en-IN';rec.interimResults=false;rec.maxAlternatives=1;
+      rec.onstart=()=>{on=true;b.classList.add('on');$('#cmdIn').placeholder='Listening…'};
+      rec.onend=()=>{on=false;b.classList.remove('on');$('#cmdIn').placeholder='Say or type a command, e.g. "show high-priority patients"'};
+      rec.onerror=e=>{toast(e.error==='not-allowed'||e.error==='service-not-allowed'?'Microphone blocked here. Open the HTML file directly in Chrome, or type the command.':'Voice error: '+e.error)};
+      rec.onresult=e=>{const t=e.results[0][0].transcript;$('#cmdIn').value=t;setTimeout(()=>{runCmd(t);$('#cmdIn').value=''},300)};rec.start()}catch(err){toast('Voice is not available here. Type the command instead.')}}})();
+
+/* ============ INIT ============ */
+try{P.forEach(p=>p.scans.forEach(scanQuality))}catch(e){console.error(e)}
+fillSelects();renderLogs();
+addLog('MV-1027: doctor accepted (no concern)');addLog('MV-1031: doctor rejected (overlapping shadow)');addLog('MV-1030: insurance payment ₹1,240 verified','fin');
+(()=>{let v='dashboard';try{const h=(location.hash||'').slice(1);if(VIEWS.includes(h))v=h}catch(e){}show(v)})();
+</script>
+</body>
+</html>
